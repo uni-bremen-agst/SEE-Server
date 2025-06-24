@@ -12,6 +12,7 @@
     <properties>
         <!-- This should be the version used by Maven Wrapper -->
         <maven-required-version>3.9</maven-required-version>
+        <maven.compiler.release>21</maven.compiler.release>
     </properties>
 
     <modules>
@@ -55,6 +56,16 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.14.0</version>
+                <configuration>
+                    <compilerArgs>
+                        <arg>-Xlint</arg>
+                    </compilerArgs>
+                </configuration>
             </plugin>
         </plugins>
     </build>

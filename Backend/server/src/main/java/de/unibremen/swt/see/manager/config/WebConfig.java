@@ -1,7 +1,7 @@
 package de.unibremen.swt.see.manager.config;
 
 import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URI;
 import lombok.extern.slf4j.Slf4j;
 import org.springdoc.core.models.GroupedOpenApi;
 import org.springframework.beans.factory.annotation.Value;
@@ -80,7 +80,7 @@ public class WebConfig {
                 String frontendUrl;
                 try {
                     // Note: Does only minimal verification
-                    frontendUrl = new URL(frontendScheme + "://" + frontendDomain).toString();
+                    frontendUrl = URI.create(frontendScheme + "://" + frontendDomain).toURL().toString();
                 } catch (MalformedURLException e) {
                     throw new RuntimeException("Frontend domain and/or scheme is not properly configured!", e);
                 }

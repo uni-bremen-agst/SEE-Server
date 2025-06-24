@@ -247,22 +247,22 @@ function ServerView() {
                           files?.map((projectFile) =>
                             <ListItem sx={{ backgroundColor: "white", borderRadius: "25px", marginBottom: "1em" }} key={projectFile.id}>
                               <Grid container>
-                                <Grid item xs={5}>
+                                <Grid size={{xs: 5}}>
                                   <ListItemText>
                                     <Typography sx={{ fontWeight: "bold", marginLeft: "2pt" }}>{projectFile.name}</Typography>
                                   </ListItemText>
                                 </Grid>
-                                <Grid item xs={4}>
+                                <Grid size={{xs: 4}}>
                                   <ListItemText>
                                     <Typography sx={{ fontStyle: "italic" }}>{ProjectTypeUtils.getLabel(projectFile.projectType)}</Typography>
                                   </ListItemText>
                                 </Grid>
-                                <Grid item xs={2} sx={{ textAlign: "right" }}>
+                                <Grid size={{xs: 2}} sx={{ textAlign: "right" }}>
                                   <ListItemText>
                                     <Typography>{Number(projectFile.size / 1024 / 1024).toFixed(2)} MiB</Typography>
                                   </ListItemText>
                                 </Grid>
-                                <Grid item xs={1} sx={{ textAlign: "right" }}>
+                                <Grid size={{xs: 1}} sx={{ textAlign: "right" }}>
                                   <ListItemText>
                                     <a href={axiosInstance.getUri() + "file/download?id=" + projectFile.id} download={projectFile.name} rel="noopener noreferrer" target="_blank" style={{ textDecoration: 'none' }}>
                                       <IconButton

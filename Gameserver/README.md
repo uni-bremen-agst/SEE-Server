@@ -21,6 +21,8 @@ To build the game server image, execute the following command from this working 
 
 ```
 docker build -t see-gameserver .
+# or
+podman build -t see-gameserver .
 ```
 
 ## Backend Access

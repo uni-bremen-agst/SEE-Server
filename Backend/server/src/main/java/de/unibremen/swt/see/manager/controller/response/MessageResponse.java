@@ -22,6 +22,7 @@ public class MessageResponse {
     }
 
     /**
+     * Returns the text of the message.
      * @return message content
      */
     public String getMessage() {
@@ -29,6 +30,7 @@ public class MessageResponse {
     }
 
     /**
+     * Sets the text of the message.
      * @param message message content
      */
     public void setMessage(String message) {

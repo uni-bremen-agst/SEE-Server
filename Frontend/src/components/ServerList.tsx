@@ -35,7 +35,7 @@ function ServerList() {
         <Grid container spacing={2}>
           {
             servers && servers.length ? servers.map((server) =>
-              <Grid key={server.id} item xs={12} sm={12} md={6} lg={6}>
+              <Grid key={server.id} size={{xs:12, sm: 12, md:6, lg:6}}>
                 <ServerListItem server={server} key={server.id} />
               </Grid>
             ) : <></>

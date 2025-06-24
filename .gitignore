@@ -1,1 +1,5 @@
-/backend-data
+# The local environment containing configurations and secrets
+.env
+
+# The local backend data directory containing persistent container data
+backend-data

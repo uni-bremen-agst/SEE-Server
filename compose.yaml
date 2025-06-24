@@ -1,8 +1,11 @@
 services:
   traefik:
-    image: traefik:v2.9
+    command:
+      - --providers.docker
+      - --providers.file.filename=/etc/traefik/dynamic.yml
+    image: docker.io/traefik:v3.4.1
     ports:
-      - "80:80"
+      - "${EXTERNAL_PORT}:80"
       # Uncomment this line to enable the traefik dashboard
       # - "8080:8080"
       # Uncomment this line to enable HTTPS
@@ -19,7 +22,7 @@ services:
   frontend:
     build: ./Frontend
     restart: always
-    image: ghcr.io/uni-bremen-agst/see-manager-frontend:1.0.0
+    image: ghcr.io/uni-bremen-agst/see-manager-frontend:latest
     depends_on:
       - backend
       - traefik
@@ -30,7 +33,7 @@ services:
   backend:
     privileged: true
     build: ./Backend
-    image: ghcr.io/uni-bremen-agst/see-manager-backend:1.0.0
+    image: ghcr.io/uni-bremen-agst/see-manager-backend:latest
     restart: always
     depends_on:
       - traefik
@@ -48,13 +51,13 @@ services:
       SQLITE_DB_FILE: /see/database.db
       # This is the docker host's external IP or domain. Game servers will be reachable on this host.
       DOCKER_EXTERNAL_HOST: ${DOCKER_EXTERNAL_HOST}
-      GAME_SERVER_IMAGE: ${DOCKER_IMAGE_NAME}
+      GAME_SERVER_IMAGE: ${GAME_SERVER_IMAGE}
       # JWT settings
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRATION: ${JWT_EXPIRATION}
       # This will add an admin account to the backend. Use with care!
-      ADD_ADMIN_NAME: ${INITIAL_ADMIN_USERNAME}
-      ADD_ADMIN_PASSWORD: ${INITIAL_ADMIN_PASSWORD}
+      ADD_ADMIN_USERNAME: ${ADD_ADMIN_USERNAME}
+      ADD_ADMIN_PASSWORD: ${ADD_ADMIN_PASSWORD}
     networks:
       - traefik
       - default
@@ -62,7 +65,6 @@ services:
 networks:
   traefik:
   default:
-
 
 volumes:
   backend-data:

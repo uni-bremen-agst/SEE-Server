@@ -12,16 +12,16 @@
     <packaging>jar</packaging>
 
     <properties>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <start-class>${project.groupId}.manager.SeeManagerApplication</start-class>
 
         <!-- Dependency Versions -->
-        <spring-boot-version>3.4.6</spring-boot-version>
+        <spring-boot-version>3.5.0</spring-boot-version>
         <!-- Note: Developers of JJWT advise to wait for 1.0 and skip upgrading to 0.12. -->
         <jjwt-version>0.12.6</jjwt-version>
-        <maven-compiler-plugin-version>3.13.0</maven-compiler-plugin-version>
+        <maven-compiler-plugin-version>3.14.0</maven-compiler-plugin-version>
         <maven-javadoc-plugin-version>3.11.2</maven-javadoc-plugin-version>
         <docker-java-version>3.5.1</docker-java-version>
     </properties>

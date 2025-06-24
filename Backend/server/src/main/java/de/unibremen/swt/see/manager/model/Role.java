@@ -46,6 +46,7 @@ public class Role {
     }
 
     /**
+     * Returns the id of the role.
      * @return  role ID
      */
     public Integer getId() {
@@ -53,6 +54,7 @@ public class Role {
     }
 
     /**
+     * Sets the id of the role
      * @param id new ID
      */
     public void setId(Integer id) {
@@ -60,6 +62,7 @@ public class Role {
     }
 
     /**
+     * Returns the name of the role.
      * @return  role name
      */
     public RoleType getName() {
@@ -67,6 +70,7 @@ public class Role {
     }
 
     /**
+     * Sets the name of the role.
      * @param name new role name
      */
     public void setName(RoleType name) {

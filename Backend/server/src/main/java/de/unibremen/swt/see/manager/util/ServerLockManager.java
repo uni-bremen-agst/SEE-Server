@@ -28,6 +28,7 @@ public class ServerLockManager {
     }
 
     /**
+     * Returns the instance of ServerLockManager.
      * @return the {@code ServerLockManager} instance
      */
     public static ServerLockManager getInstance() {
