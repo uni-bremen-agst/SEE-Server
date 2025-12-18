@@ -53,8 +53,18 @@ public class ServerSnapshot {
     @Column(name = "snapshot_data_path")
     private String snapshotDataPath;
 
+    /**
+     * Size of the snapshot file in bytes.
+     */
     @Setter
     @Column(name = "size")
     private long size;
+
+    /**
+     * The type of the project.
+     */
+    @Setter
+    @Column(name = "city_name")
+    private String cityName;
 
 }
