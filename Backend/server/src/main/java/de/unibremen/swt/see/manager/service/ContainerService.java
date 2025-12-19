@@ -62,11 +62,10 @@ public class ContainerService {
     private String dockerHost;
 
     /**
-     * Contains the domain name, or IP address, and port of this back-end
-     * application server.
+     * Contains the api url of this back-end application server.
      */
-    @Value("${see.app.backend.domain}")
-    private String backendDomain;
+    @Value("${see.app.backend.api}")
+    private String backendApi;
 
     /**
      * The name of the container image that should be used to run game server
@@ -299,7 +298,7 @@ public class ContainerService {
                 )
                 .withExposedPorts(exposedPort)
                 .withEnv(
-                        "SEE_BACKEND_DOMAIN=" + backendDomain,
+                        "SEE_BACKEND_API=" + backendApi,
                         "SEE_SERVER_ID=" + serverId,
                         "SEE_SERVER_PASSWORD=" + password)::exec,
                  MAX_RETRIES);
