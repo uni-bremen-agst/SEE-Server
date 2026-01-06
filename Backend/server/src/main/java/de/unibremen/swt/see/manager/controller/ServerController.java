@@ -12,14 +12,19 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.persistence.EntityNotFoundException;
 
+import java.io.FileReader;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import jakarta.servlet.ServletInputStream;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.Path;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.IOUtils;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -283,22 +288,25 @@ public class ServerController {
      * a 404 Not Found response if the server is not found,
      * or a 400 Bad Request response in case of invalid input or errors during processing
      */
-    @PostMapping(path = "/snapshots", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(path = "/snapshots", consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     public ResponseEntity<ServerSnapshot> createSnapshot(
             @RequestParam("serverId") UUID serverId,
-            @RequestBody() MultipartFile file) {
+            HttpServletRequest httpServletRequest) {
         try {
+            ServletInputStream inputStream = httpServletRequest.getInputStream();
             Server server = serverService.get(serverId);
             if (server == null) {
                 return ResponseEntity.notFound().build();
             }
 
-            ServerSnapshot snapshot = serverSnapshotService.createServerSnapshotFromFile(serverId, file);
-            return ResponseEntity.ok(snapshot);
+            ServerSnapshot snapshot = serverSnapshotService.createServerSnapshotFromFile(serverId, inputStream);
+            return ResponseEntity.ok(           ).build();
 
-        } catch (IllegalArgumentException | IOException e) {
+        } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
 
     }
