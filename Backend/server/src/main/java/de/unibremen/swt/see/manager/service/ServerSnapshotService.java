@@ -106,7 +106,7 @@ public class ServerSnapshotService {
         return snapshotRepo.findById(snapshotId);
     }
 
-    public ServerSnapshot createServerSnapshotFromFile(UUID serverId, MultipartFile file) throws IOException, RuntimeException {
+    public ServerSnapshot createServerSnapshotFromFile(UUID serverId, InputStream fileIs, String cityName) throws IOException, RuntimeException {
         Server server = serverService.get(serverId);
         if (server == null) {
             log.warn("Server with ID {} not found", serverId);
@@ -117,6 +117,7 @@ public class ServerSnapshotService {
         ServerSnapshot snapshot = new ServerSnapshot();
         snapshot.setServer(server);
         snapshot.setCreationTime(ZonedDateTime.now());
+        snapshot.setCityName(cityName);
 
 
         Path filePath = basePath.resolve("snapshot-" + snapshot.getCreationTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) + ".seedata");
@@ -125,8 +126,8 @@ public class ServerSnapshotService {
             throw new IOException("File not deleted. Not a regular file: " + filePath);
         }
 
-        try (InputStream inputStream = file.getInputStream()) {
-            Files.copy(inputStream, filePath);
+        try (fileIs) {
+            Files.copy(fileIs, filePath);
         } catch (IOException e) {
             throw new IOException("Unable to save file: " + filePath, e);
         }
@@ -142,7 +143,7 @@ public class ServerSnapshotService {
             // Cleanup file if database operation fails
             Files.deleteIfExists(filePath);
             log.error("Failed to create server snapshot for server ID {}: {}", serverId, e.getMessage());
-            throw new RuntimeException("Failed to create server snapshot", e);
+            throw e;
         }
     }
 }

@@ -12,30 +12,21 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.persistence.EntityNotFoundException;
 
-import java.io.FileReader;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 import jakarta.servlet.ServletInputStream;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.ws.rs.Path;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.IOUtils;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.io.IOException;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
 
 /**
  * Handles HTTP requests for the /server endpoint.
@@ -283,7 +274,6 @@ public class ServerController {
      * Creates a snapshot for the specified server using the provided file.
      *
      * @param serverId the unique identifier of the server for which the snapshot is to be created
-     * @param file the multipart file containing the snapshot data
      * @return a {@link ResponseEntity} containing the created {@link ServerSnapshot} when successful,
      * a 404 Not Found response if the server is not found,
      * or a 400 Bad Request response in case of invalid input or errors during processing
@@ -292,6 +282,7 @@ public class ServerController {
     @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     public ResponseEntity<ServerSnapshot> createSnapshot(
             @RequestParam("serverId") UUID serverId,
+            @RequestParam("project_type") String projectType,
             HttpServletRequest httpServletRequest) {
         try {
             ServletInputStream inputStream = httpServletRequest.getInputStream();
@@ -300,13 +291,11 @@ public class ServerController {
                 return ResponseEntity.notFound().build();
             }
 
-            ServerSnapshot snapshot = serverSnapshotService.createServerSnapshotFromFile(serverId, inputStream);
-            return ResponseEntity.ok(           ).build();
+            ServerSnapshot snapshot = serverSnapshotService.createServerSnapshotFromFile(serverId, inputStream, projectType);
+            return ResponseEntity.ok(snapshot);
 
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException | IOException e ) {
             return ResponseEntity.badRequest().build();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
         }
 
     }
