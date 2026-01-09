@@ -13,6 +13,7 @@ import de.unibremen.swt.see.manager.model.User;
 import de.unibremen.swt.see.manager.repository.ConfigRepository;
 import de.unibremen.swt.see.manager.repository.ServerRepository;
 import de.unibremen.swt.see.manager.util.ServerLockManager;
+import jakarta.annotation.Nullable;
 import jakarta.persistence.EntityNotFoundException;
 import java.io.IOException;
 import java.security.SecureRandom;
@@ -119,6 +120,7 @@ public class ServerService {
      * @return the server if found, or {@code null} if not found
      */
     @Transactional(readOnly = true)
+    @Nullable
     public Server get(UUID id) {
         log.info("Fetching server {}", id);
         return serverRepo.findById(id).orElse(null);

@@ -1,18 +1,27 @@
 package de.unibremen.swt.see.manager.controller;
 
-import de.unibremen.swt.see.manager.model.File;
-import de.unibremen.swt.see.manager.model.RoleType;
-import de.unibremen.swt.see.manager.model.Server;
-import de.unibremen.swt.see.manager.model.User;
+import de.unibremen.swt.see.manager.model.*;
 import de.unibremen.swt.see.manager.security.UserDetailsImpl;
 import de.unibremen.swt.see.manager.service.AccessControlService;
 import de.unibremen.swt.see.manager.service.ServerService;
+import de.unibremen.swt.see.manager.service.ServerSnapshotService;
 import de.unibremen.swt.see.manager.service.UserService;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.persistence.EntityNotFoundException;
+
 import java.io.IOException;
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
+
+import jakarta.servlet.ServletInputStream;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -48,6 +57,11 @@ public class ServerController {
      * Used to access user data.
      */
     private final UserService userService;
+
+    /**
+     * Used to access server snapshots.
+     */
+    private final ServerSnapshotService serverSnapshotService;
 
     /**
      * Retrieves metadata of the server identified by the specified ID.
@@ -212,4 +226,77 @@ public class ServerController {
         return ResponseEntity.ok().body(serverService.getFilesForServer(id));
     }
 
+
+    /**
+     * Retrieves all snapshots of a server.
+     *
+     * @param serverId the ID of the server
+     * @return {@code 200 Ok} if successful, or {@code 404 Not Found} if
+     * the server does not exist, or {@code 500 Internal Server Error} if an
+     * error occurs.
+     */
+    @GetMapping("/snapshots")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('USER') and @accessControlService.canAccessServer(principal.id, #serverId)")
+    public ResponseEntity<List<ServerSnapshot>> getAllSnapshotsOfServer(@RequestParam("serverId") UUID serverId) {
+        Optional<List<ServerSnapshot>> server = serverSnapshotService.getServerSnapshots(serverId);
+
+        if (server.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(server.get());
+    }
+
+    /**
+     * Retrieves the latest snapshot of a specified server.
+     *
+     * @param serverId the unique identifier of the server whose latest snapshot is being requested
+     * @return a ResponseEntity containing the latest ServerSnapshot if found;
+     * otherwise, a ResponseEntity with a not found (404) status
+     */
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Latest snapshot retrieved successfully",
+                    content = @Content(schema = @Schema(implementation = ServerSnapshot.class))),
+            @ApiResponse(responseCode = "404", description = "Server or snapshot not found",
+                    content = @Content(schema = @Schema(implementation = Void.class)))
+    })
+    @GetMapping("/snapshots:latest")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('USER') and @accessControlService.canAccessServer(principal.id, #serverId)")
+    public ResponseEntity<ServerSnapshot> getLatestSnapshotsOfServer(@RequestParam("serverId") UUID serverId) {
+        Optional<ServerSnapshot> server = serverSnapshotService.getLatestServerSnapshot(serverId);
+
+        if (server.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(server.get());
+    }
+
+    /**
+     * Creates a snapshot for the specified server using the provided file.
+     *
+     * @param serverId the unique identifier of the server for which the snapshot is to be created.
+     * @param cityName the name of the code city.
+     * @return a {@link ResponseEntity} containing the created {@link ServerSnapshot} when successful,
+     * a 404 Not Found response if the server is not found,
+     * or a 400 Bad Request response in case of invalid input or errors during processing
+     */
+    @PostMapping(path = "/snapshots", consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    @PreAuthorize("hasRole('ADMIN') or hasRole('USER') and @accessControlService.canAccessServer(principal.id, #serverId)")
+    public ResponseEntity<ServerSnapshot> createSnapshot(
+            @RequestParam("serverId") UUID serverId,
+            @RequestParam("city_name") String cityName,
+            HttpServletRequest httpServletRequest) {
+        try {
+            Server server = serverService.get(serverId);
+            if (server == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            ServletInputStream inputStream = httpServletRequest.getInputStream();
+            ServerSnapshot snapshot = serverSnapshotService.createServerSnapshotFromFile(serverId, inputStream, cityName);
+            return ResponseEntity.ok(snapshot);
+
+        } catch (IllegalArgumentException | IOException e ) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
 }

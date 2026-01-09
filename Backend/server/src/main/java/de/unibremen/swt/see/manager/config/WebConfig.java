@@ -2,11 +2,15 @@ package de.unibremen.swt.see.manager.config;
 
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.util.List;
+
 import lombok.extern.slf4j.Slf4j;
 import org.springdoc.core.models.GroupedOpenApi;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.converter.ByteArrayHttpMessageConverter;
+import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -71,6 +75,11 @@ public class WebConfig {
     @Bean
     public WebMvcConfigurer createCorsConfiguration() {
         return new WebMvcConfigurer() {
+            @Override
+            public void configureMessageConverters(List<HttpMessageConverter<?>> converters){
+                converters.add(new ByteArrayHttpMessageConverter());
+            }
+
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 if (frontendDomain == null || frontendDomain.isBlank()) {
