@@ -236,7 +236,7 @@ public class ServerController {
      * error occurs.
      */
     @GetMapping("/snapshots")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('USER') and @accessControlService.canAccessFile(principal.id, #serverId)")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('USER') and @accessControlService.canAccessServer(principal.id, #serverId)")
     public ResponseEntity<List<ServerSnapshot>> getAllSnapshotsOfServer(@RequestParam("serverId") UUID serverId) {
         Optional<List<ServerSnapshot>> server = serverSnapshotService.getServerSnapshots(serverId);
 
@@ -260,7 +260,7 @@ public class ServerController {
                     content = @Content(schema = @Schema(implementation = Void.class)))
     })
     @GetMapping("/snapshots:latest")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('USER') and @accessControlService.canAccessServer(principal.id, #serverId)")
     public ResponseEntity<ServerSnapshot> getLatestSnapshotsOfServer(@RequestParam("serverId") UUID serverId) {
         Optional<ServerSnapshot> server = serverSnapshotService.getLatestServerSnapshot(serverId);
 
@@ -280,7 +280,7 @@ public class ServerController {
      * or a 400 Bad Request response in case of invalid input or errors during processing
      */
     @PostMapping(path = "/snapshots", consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('USER') and @accessControlService.canAccessServer(principal.id, #serverId)")
     public ResponseEntity<ServerSnapshot> createSnapshot(
             @RequestParam("serverId") UUID serverId,
             @RequestParam("city_name") String cityName,
