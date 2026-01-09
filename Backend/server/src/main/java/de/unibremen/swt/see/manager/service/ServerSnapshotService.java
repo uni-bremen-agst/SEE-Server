@@ -131,7 +131,6 @@ public class ServerSnapshotService {
         snapshot.setCreationTime(ZonedDateTime.now());
         snapshot.setCityName(cityName);
 
-
         Path filePath = basePath.resolve("snapshot-" + snapshot.getCreationTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) + ".zip");
 
         if (Files.exists(filePath) && !Files.isRegularFile(filePath)) {
