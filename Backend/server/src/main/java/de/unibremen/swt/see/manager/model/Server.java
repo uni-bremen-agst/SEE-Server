@@ -104,6 +104,13 @@ public class Server {
     private Set<File> serverFiles;
 
     /**
+     * The snapshots associated with the game server.
+     */
+    @JsonIgnore
+    @OneToMany(mappedBy = "server")
+    private Set<ServerSnapshot> snapshots;
+
+    /**
      * The point in time this configuration was persisted.
      */
     @Column(name = "creation_time", updatable = false)

@@ -273,7 +273,8 @@ public class ServerController {
     /**
      * Creates a snapshot for the specified server using the provided file.
      *
-     * @param serverId the unique identifier of the server for which the snapshot is to be created
+     * @param serverId the unique identifier of the server for which the snapshot is to be created.
+     * @param cityName the name of the code city.
      * @return a {@link ResponseEntity} containing the created {@link ServerSnapshot} when successful,
      * a 404 Not Found response if the server is not found,
      * or a 400 Bad Request response in case of invalid input or errors during processing
@@ -282,16 +283,16 @@ public class ServerController {
     @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     public ResponseEntity<ServerSnapshot> createSnapshot(
             @RequestParam("serverId") UUID serverId,
-            @RequestParam("project_type") String projectType,
+            @RequestParam("city_name") String cityName,
             HttpServletRequest httpServletRequest) {
         try {
-            ServletInputStream inputStream = httpServletRequest.getInputStream();
             Server server = serverService.get(serverId);
             if (server == null) {
                 return ResponseEntity.notFound().build();
             }
 
-            ServerSnapshot snapshot = serverSnapshotService.createServerSnapshotFromFile(serverId, inputStream, projectType);
+            ServletInputStream inputStream = httpServletRequest.getInputStream();
+            ServerSnapshot snapshot = serverSnapshotService.createServerSnapshotFromFile(serverId, inputStream, cityName);
             return ResponseEntity.ok(snapshot);
 
         } catch (IllegalArgumentException | IOException e ) {

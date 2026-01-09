@@ -4,6 +4,7 @@ import de.unibremen.swt.see.manager.model.Server;
 import de.unibremen.swt.see.manager.model.ServerSnapshot;
 import de.unibremen.swt.see.manager.repository.ServerSnapshotRepository;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.persistence.PersistenceException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -106,7 +107,16 @@ public class ServerSnapshotService {
         return snapshotRepo.findById(snapshotId);
     }
 
-    public ServerSnapshot createServerSnapshotFromFile(UUID serverId, InputStream fileIs, String cityName) throws IOException, RuntimeException {
+    /**
+     * Creates a new snapshot for the specified server from the provided file input stream.
+     * @param serverId The id of the server.
+     * @param fileIs The snapshot's file input stream.
+     * @param cityName The name of the city the snapshot is for.
+     * @return The created snapshot.
+     * @throws IOException Is thrown if the snapshot file cannot be written to disk.
+     * @throws PersistenceException If the snapshot cannot be saved to the database.
+     */
+    public ServerSnapshot createServerSnapshotFromFile(UUID serverId, InputStream fileIs, String cityName) throws IOException, PersistenceException {
         Server server = serverService.get(serverId);
         if (server == null) {
             log.warn("Server with ID {} not found", serverId);
@@ -120,7 +130,7 @@ public class ServerSnapshotService {
         snapshot.setCityName(cityName);
 
 
-        Path filePath = basePath.resolve("snapshot-" + snapshot.getCreationTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) + ".seedata");
+        Path filePath = basePath.resolve("snapshot-" + snapshot.getCreationTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) + ".zip");
 
         if (Files.exists(filePath) && !Files.isRegularFile(filePath)) {
             throw new IOException("File not deleted. Not a regular file: " + filePath);
@@ -139,8 +149,8 @@ public class ServerSnapshotService {
             ServerSnapshot snapshotResult = snapshotRepo.save(snapshot);
             log.info("Created server snapshot for server ID {}", serverId);
             return snapshotResult;
-        } catch (Exception e) {
-            // Cleanup file if database operation fails
+        } catch (PersistenceException e) {
+            // Cleanup file if the database operation fails
             Files.deleteIfExists(filePath);
             log.error("Failed to create server snapshot for server ID {}: {}", serverId, e.getMessage());
             throw e;
