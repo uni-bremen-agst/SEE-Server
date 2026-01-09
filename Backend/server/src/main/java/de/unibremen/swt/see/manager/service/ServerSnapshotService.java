@@ -9,7 +9,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -42,6 +41,9 @@ public class ServerSnapshotService {
      */
     private final ServerService serverService;
 
+    /**
+     * Service for managing file-related operations.
+     */
     private final FileService fileService;
 
     /**
@@ -62,7 +64,7 @@ public class ServerSnapshotService {
 
     /**
      * Retrieves the latest server snapshot for a given server ID.
-     *
+     * <p>
      * This method fetches the server associated with the provided server ID and retrieves
      * all snapshots for that server. It then determines the most recent snapshot based on
      * its creation time.

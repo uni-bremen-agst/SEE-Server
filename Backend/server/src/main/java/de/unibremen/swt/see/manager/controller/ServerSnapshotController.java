@@ -72,6 +72,4 @@ public class ServerSnapshotController {
 
         return ResponseEntity.ok().headers(headers).body(resource);
     }
-
-
 }

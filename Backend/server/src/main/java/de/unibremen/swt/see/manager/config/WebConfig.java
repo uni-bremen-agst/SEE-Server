@@ -56,8 +56,6 @@ public class WebConfig {
                 .build();
     }
 
-
-
     /**
      * Creates and configures a {@code WebMvcConfigurer} for Cross-Origin
      * Resource Sharing (CORS) settings.

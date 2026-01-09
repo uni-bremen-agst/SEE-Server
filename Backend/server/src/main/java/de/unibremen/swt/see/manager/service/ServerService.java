@@ -275,7 +275,7 @@ public class ServerService {
             lockManager.removeLock(id);
         } finally {
             lock.unlock();
-            log.debug("Lock released: {}", id);;
+            log.debug("Lock released: {}", id);
         }
     }
 

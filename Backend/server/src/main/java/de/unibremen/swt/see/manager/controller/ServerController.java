@@ -298,6 +298,5 @@ public class ServerController {
         } catch (IllegalArgumentException | IOException e ) {
             return ResponseEntity.badRequest().build();
         }
-
     }
 }
