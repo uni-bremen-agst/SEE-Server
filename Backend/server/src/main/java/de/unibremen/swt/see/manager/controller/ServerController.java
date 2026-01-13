@@ -2,6 +2,9 @@ package de.unibremen.swt.see.manager.controller;
 
 import de.unibremen.swt.see.manager.model.*;
 import de.unibremen.swt.see.manager.security.UserDetailsImpl;
+import de.unibremen.swt.see.manager.security.annotations.RequireAdmin;
+import de.unibremen.swt.see.manager.security.annotations.RequireAdminOrUser;
+import de.unibremen.swt.see.manager.security.annotations.RequireAdminOrUserAndOwnerOfServer;
 import de.unibremen.swt.see.manager.service.AccessControlService;
 import de.unibremen.swt.see.manager.service.ServerService;
 import de.unibremen.swt.see.manager.service.ServerSnapshotService;
@@ -23,7 +26,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -76,8 +78,9 @@ public class ServerController {
      * {@code 401 Unauthorized} if access cannot be granted.
      */
     @GetMapping("/")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('USER') and @accessControlService.canAccessServer(principal.id, #id)")
-    public ResponseEntity<?> get(@RequestParam(ID_PARAMETER_NAME) UUID id) {
+    @RequireAdminOrUserAndOwnerOfServer
+    //@PreAuthorize("hasRole('ADMIN') or hasRole('USER') and @accessControlService.canAccessServer(principal.id, #id)")
+    public ResponseEntity<Server> get(@RequestParam(ID_PARAMETER_NAME) UUID id) {
         return ResponseEntity.ok().body(serverService.get(id));
     }
 
@@ -91,8 +94,8 @@ public class ServerController {
      * {@code 401 Unauthorized} if access cannot be granted.
      */
     @GetMapping("/all")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
-    public ResponseEntity<?> getAll() {
+    @RequireAdminOrUser
+    public ResponseEntity<List<Server>> getAll() {
         final UserDetailsImpl userDetails = (UserDetailsImpl) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         final User user = userService.get(userDetails.getId());
 
@@ -100,7 +103,7 @@ public class ServerController {
             return ResponseEntity.ok().body(serverService.getAll());
         }
 
-        return ResponseEntity.ok().body(user.getServers());
+        return ResponseEntity.ok().body(user.getServers().stream().toList());
     }
 
     /**
@@ -112,8 +115,8 @@ public class ServerController {
      * or {@code 401 Unauthorized} if access cannot be granted.
      */
     @PostMapping("/create")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> create(@RequestBody Server server) {
+    @RequireAdmin
+    public ResponseEntity<Server> create(@RequestBody Server server) {
         server = serverService.create(server);
         if (server == null) {
             return ResponseEntity.internalServerError().build();
@@ -133,8 +136,8 @@ public class ServerController {
      * {@code 401 Unauthorized} if access cannot be granted.
      */
     @PostMapping("/addFile")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> addFile(
+    @RequireAdmin
+    public ResponseEntity<File> addFile(
             @RequestParam(ID_PARAMETER_NAME) UUID serverId,
             @RequestParam("projectType") String projectType,
             @RequestParam("file") MultipartFile file) {
@@ -157,8 +160,8 @@ public class ServerController {
      * granted.
      */
     @DeleteMapping("/delete")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> delete(@RequestParam(ID_PARAMETER_NAME) UUID id) {
+    @RequireAdmin
+    public ResponseEntity<String> delete(@RequestParam(ID_PARAMETER_NAME) UUID id) {
         try {
             serverService.delete(id);
         } catch (EntityNotFoundException e) {
@@ -181,8 +184,8 @@ public class ServerController {
      * already online, or {@code 401 Unauthorized} if access cannot be granted.
      */
     @PostMapping("/start")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> start(@RequestParam(ID_PARAMETER_NAME) UUID id) {
+    @RequireAdmin
+    public ResponseEntity<String> start(@RequestParam(ID_PARAMETER_NAME) UUID id) {
         try {
             serverService.start(id);
         } catch (EntityNotFoundException e) {
@@ -205,9 +208,8 @@ public class ServerController {
      * already stopped, or {@code 401 Unauthorized} if access cannot be granted.
      */
     @PostMapping("/stop")
-    //@RequireAdminRole
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> stop(@RequestParam(ID_PARAMETER_NAME) UUID id) {
+    @RequireAdmin
+    public ResponseEntity<String> stop(@RequestParam(ID_PARAMETER_NAME) UUID id) {
         try {
             serverService.stop(id);
         } catch (EntityNotFoundException e) {
@@ -227,8 +229,8 @@ public class ServerController {
      * {@code 401 Unauthorized} if access cannot be granted.
      */
     @GetMapping("/files")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('USER') and @accessControlService.canAccessServer(principal.id, #id)")
-    public ResponseEntity<?> getFiles(@RequestParam(ID_PARAMETER_NAME) UUID id) {
+    @RequireAdminOrUserAndOwnerOfServer
+    public ResponseEntity<List<File>> getFiles(@RequestParam(ID_PARAMETER_NAME) UUID id) {
         return ResponseEntity.ok().body(serverService.getFilesForServer(id));
     }
 
@@ -242,8 +244,8 @@ public class ServerController {
      * error occurs.
      */
     @GetMapping("/snapshots")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('USER') and @accessControlService.canAccessServer(principal.id, #serverId)")
-    public ResponseEntity<List<ServerSnapshot>> getAllSnapshotsOfServer(@RequestParam(SERVER_ID_PARAMETER_NAME) UUID serverId) {
+    @RequireAdminOrUserAndOwnerOfServer
+    public ResponseEntity<List<ServerSnapshot>> getAllSnapshotsOfServer(@RequestParam(ID_PARAMETER_NAME) UUID serverId) {
         Optional<List<ServerSnapshot>> server = serverSnapshotService.getServerSnapshots(serverId);
 
         if (server.isEmpty()) {
@@ -266,8 +268,8 @@ public class ServerController {
                     content = @Content(schema = @Schema(implementation = Void.class)))
     })
     @GetMapping("/snapshots:latest")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('USER') and @accessControlService.canAccessServer(principal.id, #serverId)")
-    public ResponseEntity<ServerSnapshot> getLatestSnapshotsOfServer(@RequestParam(SERVER_ID_PARAMETER_NAME) UUID serverId) {
+    @RequireAdminOrUserAndOwnerOfServer
+    public ResponseEntity<ServerSnapshot> getLatestSnapshotsOfServer(@RequestParam(ID_PARAMETER_NAME) UUID serverId) {
         Optional<ServerSnapshot> server = serverSnapshotService.getLatestServerSnapshot(serverId);
 
         if (server.isEmpty()) {
@@ -279,29 +281,29 @@ public class ServerController {
     /**
      * Creates a snapshot for the specified server using the provided file.
      *
-     * @param serverId the unique identifier of the server for which the snapshot is to be created.
+     * @param id the unique identifier of the server for which the snapshot is to be created.
      * @param cityName the name of the code city.
      * @return a {@link ResponseEntity} containing the created {@link ServerSnapshot} when successful,
      * a 404 Not Found response if the server is not found,
      * or a 400 Bad Request response in case of invalid input or errors during processing
      */
     @PostMapping(path = "/snapshots", consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-    @PreAuthorize("hasRole('ADMIN') or hasRole('USER') and @accessControlService.canAccessServer(principal.id, #serverId)")
+    @RequireAdminOrUserAndOwnerOfServer
     public ResponseEntity<ServerSnapshot> createSnapshot(
-            @RequestParam(SERVER_ID_PARAMETER_NAME) UUID serverId,
+            @RequestParam(ID_PARAMETER_NAME) UUID id,
             @RequestParam("city_name") String cityName,
             HttpServletRequest httpServletRequest) {
         try {
-            Server server = serverService.get(serverId);
+            Server server = serverService.get(id);
             if (server == null) {
                 return ResponseEntity.notFound().build();
             }
 
             ServletInputStream inputStream = httpServletRequest.getInputStream();
-            ServerSnapshot snapshot = serverSnapshotService.createServerSnapshotFromFile(serverId, inputStream, cityName);
+            ServerSnapshot snapshot = serverSnapshotService.createServerSnapshotFromFile(id, inputStream, cityName);
             return ResponseEntity.ok(snapshot);
 
-        } catch (IllegalArgumentException | IOException e ) {
+        } catch (IllegalArgumentException | IOException e) {
             return ResponseEntity.badRequest().build();
         }
     }
