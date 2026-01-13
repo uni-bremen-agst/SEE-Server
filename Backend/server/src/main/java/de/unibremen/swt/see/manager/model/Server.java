@@ -22,7 +22,13 @@ import lombok.Setter;
         })
 @RequiredArgsConstructor
 public class Server {
-    
+
+    /**
+     * The name of the server's foreign key column.
+     */
+    @JsonIgnore
+    private static final String SERVER_FK_NAME = "server";
+
     /**
      * ID of the server configuration.
      */
@@ -100,14 +106,14 @@ public class Server {
      * These are usually files related to a Code City displayed in SEE.
      */
     @JsonIgnore
-    @OneToMany(mappedBy = "server")
+    @OneToMany(mappedBy = SERVER_FK_NAME)
     private Set<File> serverFiles;
 
     /**
      * The snapshots associated with the game server.
      */
     @JsonIgnore
-    @OneToMany(mappedBy = "server")
+    @OneToMany(mappedBy = SERVER_FK_NAME)
     private Set<ServerSnapshot> snapshots;
 
     /**
