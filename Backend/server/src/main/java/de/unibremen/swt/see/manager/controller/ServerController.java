@@ -65,10 +65,10 @@ public class ServerController {
      */
     private final ServerSnapshotService serverSnapshotService;
 
-
+    /**
+     * Name of the ID URL parameter.
+     */
     private static final String ID_PARAMETER_NAME = "id";
-
-    private static final String SERVER_ID_PARAMETER_NAME = "serverId";
 
     /**
      * Retrieves metadata of the server identified by the specified ID.
