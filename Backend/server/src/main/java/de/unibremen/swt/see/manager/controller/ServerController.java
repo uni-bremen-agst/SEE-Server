@@ -233,7 +233,6 @@ public class ServerController {
         return ResponseEntity.ok().body(serverService.getFilesForServer(id));
     }
 
-
     /**
      * Retrieves all snapshots of a server.
      *
