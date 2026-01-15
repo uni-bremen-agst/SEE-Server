@@ -79,7 +79,6 @@ public class ServerController {
      */
     @GetMapping("/")
     @RequireAdminOrUserAndOwnerOfServer
-    //@PreAuthorize("hasRole('ADMIN') or hasRole('USER') and @accessControlService.canAccessServer(principal.id, #id)")
     public ResponseEntity<Server> get(@RequestParam(ID_PARAMETER_NAME) UUID id) {
         return ResponseEntity.ok().body(serverService.get(id));
     }
