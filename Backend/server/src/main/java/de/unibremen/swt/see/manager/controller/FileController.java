@@ -1,10 +1,13 @@
 package de.unibremen.swt.see.manager.controller;
 
 import de.unibremen.swt.see.manager.model.File;
+import de.unibremen.swt.see.manager.security.annotations.RequireAdmin;
+import de.unibremen.swt.see.manager.security.annotations.RequireAdminOrUserAndOwnerOfFile;
 import de.unibremen.swt.see.manager.service.FileService;
 import de.unibremen.swt.see.manager.service.ServerService;
 import jakarta.persistence.EntityNotFoundException;
 import java.io.IOException;
+import java.util.Objects;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -49,7 +52,7 @@ public class FileController {
      *         or {@code 401 Unauthorized} if access cannot be granted.
      */
     @DeleteMapping("/delete")
-    @PreAuthorize("hasRole('ADMIN')")
+    @RequireAdmin
     public ResponseEntity<?> deleteFile(@RequestParam("id") UUID id) {
         try {
             fileService.delete(id);
@@ -70,7 +73,7 @@ public class FileController {
      * {@code 401 Unauthorized} if access cannot be granted.
      */
     @GetMapping("/get")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('USER') and @accessControlService.canAccessFile(principal.id, #id)")
+    @RequireAdminOrUserAndOwnerOfFile
     public ResponseEntity<?> getFile(@RequestParam("id") UUID id) {
         File file = fileService.get(id);
         if (file == null) {
@@ -90,7 +93,7 @@ public class FileController {
      * granted.
      */
     @GetMapping("/download")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('USER') and @accessControlService.canAccessFile(principal.id, #id)")
+    @RequireAdminOrUserAndOwnerOfFile
     public ResponseEntity<?> downloadFile(@RequestParam("id") UUID id) {
         File file = fileService.get(id);
         if (file == null) {

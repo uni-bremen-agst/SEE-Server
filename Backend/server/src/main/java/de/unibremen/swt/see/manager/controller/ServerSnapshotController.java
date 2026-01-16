@@ -1,6 +1,7 @@
 package de.unibremen.swt.see.manager.controller;
 
 import de.unibremen.swt.see.manager.model.ServerSnapshot;
+import de.unibremen.swt.see.manager.security.annotations.RequireAdminOrUser;
 import de.unibremen.swt.see.manager.service.ServerSnapshotService;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -52,7 +53,7 @@ public class ServerSnapshotController {
     }
 
     @GetMapping("/{snapshotId}/download")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
+    @RequireAdminOrUser
     public ResponseEntity<Resource> downloadFile(@PathVariable("snapshotId") UUID snapshotId) {
         Optional<ServerSnapshot> file = serverSnapshotService.getServerSnapshotById(snapshotId);
         if (file.isEmpty()) {

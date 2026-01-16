@@ -9,6 +9,8 @@ import de.unibremen.swt.see.manager.model.RoleType;
 import de.unibremen.swt.see.manager.model.User;
 import de.unibremen.swt.see.manager.security.JwtUtils;
 import de.unibremen.swt.see.manager.security.UserDetailsImpl;
+import de.unibremen.swt.see.manager.security.annotations.RequireAdmin;
+import de.unibremen.swt.see.manager.security.annotations.RequireAdminOrUser;
 import de.unibremen.swt.see.manager.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -16,7 +18,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -60,7 +61,7 @@ public class UserController {
      *         or {@code 401 Unauthorized} if access cannot be granted.
      */
     @GetMapping("/me")
-    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    @RequireAdminOrUser
     public ResponseEntity<?> getUser(@AuthenticationPrincipal UserDetails userDetails) {
         return ResponseEntity.ok().body(userService.getByUsername(userDetails.getUsername()));
     }
@@ -72,7 +73,7 @@ public class UserController {
      *         or {@code 401 Unauthorized} if access cannot be granted.
      */
     @GetMapping("/all")
-    @PreAuthorize("hasRole('ADMIN')")
+    @RequireAdmin
     public ResponseEntity<?> getUsers() {
         return ResponseEntity.ok().body(userService.getAll());
     }
@@ -88,7 +89,7 @@ public class UserController {
      * @see de.unibremen.swt.see.manager.controller.request.SignupRequest
      */
     @PostMapping("/create")
-    @PreAuthorize("hasRole('ADMIN')")
+    @RequireAdmin
     public ResponseEntity<?> createUser(@RequestBody SignupRequest signupRequest) {
         User user = userService.create(signupRequest.getUsername(), signupRequest.getPassword(), signupRequest.getRole());
 
@@ -109,7 +110,7 @@ public class UserController {
      * or {@code 401 Unauthorized} if access cannot be granted.
      */
     @PostMapping("/addRoleToUser")
-    @PreAuthorize("hasRole('ADMIN')")
+    @RequireAdmin
     public ResponseEntity<?> addRoleToUser(@RequestParam String username,
             @RequestParam RoleType role) {
         User user = userService.addRole(username, role);
@@ -130,7 +131,7 @@ public class UserController {
      *         or {@code 401 Unauthorized} if access cannot be granted.
      */
     @DeleteMapping("/removeRoleFromUser")
-    @PreAuthorize("hasRole('ADMIN')")
+    @RequireAdmin
     public ResponseEntity<?> removeRoleToUSer(@RequestParam String username,
                                               @RequestParam RoleType role) {
         return ResponseEntity.ok().body(userService.removeRole(username, role));
@@ -144,7 +145,7 @@ public class UserController {
      *         or {@code 401 Unauthorized} if access cannot be granted.
      */
     @DeleteMapping("/delete")
-    @PreAuthorize("hasRole('ADMIN')")
+    @RequireAdmin
     public ResponseEntity<?> deleteUser(@RequestParam String username) {
         userService.deleteByUsername(username);
         return ResponseEntity.ok().build();
@@ -167,7 +168,7 @@ public class UserController {
      * @see de.unibremen.swt.see.manager.controller.request.ChangeUsernameRequest
      */
     @PutMapping("/changeUsername")
-    @PreAuthorize("hasRole('ADMIN')")
+    @RequireAdmin
     public ResponseEntity<?> changeUsername(
             @AuthenticationPrincipal UserDetails oldUserDetails,
             @RequestBody ChangeUsernameRequest changeUsernameRequest) {
@@ -203,7 +204,7 @@ public class UserController {
      * @see de.unibremen.swt.see.manager.controller.request.ChangePasswordRequest
      */
     @PutMapping("/changePassword")
-    @PreAuthorize("hasRole('ADMIN')")
+    @RequireAdmin
     public ResponseEntity<?> changePassword(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestBody ChangePasswordRequest changePasswordRequest) {
