@@ -13,6 +13,7 @@ import de.unibremen.swt.see.manager.model.User;
 import de.unibremen.swt.see.manager.repository.ConfigRepository;
 import de.unibremen.swt.see.manager.repository.ServerRepository;
 import de.unibremen.swt.see.manager.util.ServerLockManager;
+import io.livekit.server.*;
 import jakarta.annotation.Nullable;
 import jakarta.persistence.EntityNotFoundException;
 import java.io.IOException;
@@ -387,11 +388,14 @@ public class ServerService {
         try {
             log.info("Stopping server {}", id);
             containerService.stopContainer(server);
+            this.removeLivekitRoom(server.getName());
         } catch (NotFoundException e) {
             throw new IllegalStateException("The container to be stopped does not exist!", e);
         } catch (NotModifiedException e) {
             server.setStatus(ServerStatusType.OFFLINE);
             throw new IllegalStateException("The container is already stopped!", e);
+        } catch (IOException e) {
+            throw new IllegalStateException("The LiveKit room could not be removed!", e);
         } finally {
             lock.unlock();
             log.debug("Lock released: {}", id);
@@ -468,6 +472,7 @@ public class ServerService {
     /**
      * Creates a LiveKit room for the given server.
      * The name of the room will be the server name.
+     *
      * @param server The server to create the room for.
      * @throws IOException Will the thrown if the room could not be created.
      */
@@ -477,6 +482,7 @@ public class ServerService {
 
     /**
      * Creates a LiveKit room with the given name.
+     *
      * @param roomName The name of the room to create. Must never be null.
      * @throws IOException Will the thrown if the room could not be created.
      */
@@ -487,6 +493,18 @@ public class ServerService {
 
         Response<LivekitModels.Room> response = call.execute();
         response.body();
+    }
+
+    /**
+     * Removes a LiveKit room with the given name.
+     * @param roomName The name of the room to remove. Must never be null.
+     * @throws IOException Will the thrown if the room could not be removed.
+     */
+    public void removeLivekitRoom(String roomName) throws IOException {
+        RoomServiceClient client = RoomServiceClient.createClient(liveKitApiUrl, liveKitApiKey, liveKitApiSecret);
+        Call<Void> call = client.deleteRoom(roomName);
+
+        call.execute();
     }
 
     /**
