@@ -22,12 +22,16 @@ import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
+
+import livekit.LivekitModels;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import retrofit2.Call;
+import retrofit2.Response;
 
 /**
  * Service class for managing server-related operations.
@@ -87,6 +91,25 @@ public class ServerService {
      */
     @Value("${see.app.docker.host.external}")
     private String externalDockerHost;
+
+    /**
+     * API URL for the LiveKit instance.
+     */
+    @Value("${see.app.livekit.url}")
+    private String liveKitApiUrl;
+
+    /**
+     * API Key for the LiveKit instance.
+     */
+    @Value("${see.app.livekit.apiKey}")
+    private String liveKitApiKey;
+
+    /**
+     * API Secret for the LiveKit instance.
+     */
+    @Value("${see.app.livekit.apiSecret}")
+    private String liveKitApiSecret;
+
 
     /**
      * The lock manager for concurrent writes.
@@ -314,6 +337,7 @@ public class ServerService {
 
             try {
                 containerService.startContainer(server);
+                createLiveKitRoom(server);
             } catch (NotModifiedException e) {
                 throw new IllegalStateException("The container is already running!", e);
             } catch (NotFoundException e) {
@@ -424,6 +448,45 @@ public class ServerService {
         for (Server server : getAll()) {
             updateStatus(server);
         }
+    }
+
+    /**
+     * Generates a LiveKit API token for the given server with permission to join a server-room.
+     * <p>
+     * The name of the livekit room is the server name.
+     *
+     * @param server The server to generate the token for. Must never be null.
+     * @return The generated token.
+     */
+    public String generateLiveKitApiTokenForServer(Server server) {
+        AccessToken token = new AccessToken(liveKitApiKey, liveKitApiSecret);
+        token.addGrants(new RoomJoin(true));
+        token.addGrants(new RoomName(server.getName()));
+        return token.toJwt();
+    }
+
+    /**
+     * Creates a LiveKit room for the given server.
+     * The name of the room will be the server name.
+     * @param server The server to create the room for.
+     * @throws IOException Will the thrown if the room could not be created.
+     */
+    public void createLiveKitRoom(Server server) throws IOException {
+        createLiveKitRoom(server.getName());
+    }
+
+    /**
+     * Creates a LiveKit room with the given name.
+     * @param roomName The name of the room to create. Must never be null.
+     * @throws IOException Will the thrown if the room could not be created.
+     */
+    public void createLiveKitRoom(String roomName) throws IOException {
+        RoomServiceClient client = RoomServiceClient.createClient(liveKitApiUrl, liveKitApiKey, liveKitApiSecret);
+
+        Call<LivekitModels.Room> call = client.createRoom(roomName);
+
+        Response<LivekitModels.Room> response = call.execute();
+        response.body();
     }
 
     /**
