@@ -129,7 +129,11 @@
             <artifactId>docker-java-transport-httpclient5</artifactId>
             <version>${docker-java-version}</version>
         </dependency>-->
-
+        <dependency>
+            <groupId>io.livekit</groupId>
+            <artifactId>livekit-server</artifactId>
+            <version>0.11.1</version>
+        </dependency>
         <!-- Testing -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
