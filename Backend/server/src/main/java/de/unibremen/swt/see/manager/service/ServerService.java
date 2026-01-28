@@ -263,8 +263,8 @@ public class ServerService {
      *
      * @param id the ID of the server to be deleted
      * @throws EntityNotFoundException if the server does not exist
-     * @throws IOException if there is an error during file deletion
-     * @throws IllegalStateException if the server is busy
+     * @throws IOException             if there is an error during file deletion
+     * @throws IllegalStateException   if the server is busy
      */
     public void delete(UUID id) throws EntityNotFoundException, IOException, IllegalStateException {
         final Server server = serverRepo.findById(id).orElse(null);
@@ -311,8 +311,8 @@ public class ServerService {
      *
      * @param id the ID of the server to be started
      * @throws EntityNotFoundException if the server does not exist
-     * @throws IOException if there is an error accessing server files
-     * @throws IllegalStateException if the server is busy or already online
+     * @throws IOException             if there is an error accessing server files
+     * @throws IllegalStateException   if the server is busy or already online
      */
     public void start(UUID id) throws EntityNotFoundException, IOException, IllegalStateException {
         final Server server = serverRepo.findById(id).orElse(null);
@@ -364,7 +364,7 @@ public class ServerService {
      *
      * @param id the ID of the server to be stopped
      * @throws EntityNotFoundException if the server does not exist
-     * @throws IllegalStateException if the server is busy or already stopped
+     * @throws IllegalStateException   if the server is busy or already stopped
      */
     public void stop(UUID id) throws EntityNotFoundException, IllegalStateException {
         final Server server = serverRepo.findById(id).orElse(null);
@@ -388,14 +388,12 @@ public class ServerService {
         try {
             log.info("Stopping server {}", id);
             containerService.stopContainer(server);
-            this.removeLivekitRoom(server.getName());
+            //this.removeLivekitRoom(server.getName());
         } catch (NotFoundException e) {
             throw new IllegalStateException("The container to be stopped does not exist!", e);
         } catch (NotModifiedException e) {
             server.setStatus(ServerStatusType.OFFLINE);
             throw new IllegalStateException("The container is already stopped!", e);
-        } catch (IOException e) {
-            throw new IllegalStateException("The LiveKit room could not be removed!", e);
         } finally {
             lock.unlock();
             log.debug("Lock released: {}", id);
@@ -465,6 +463,7 @@ public class ServerService {
     public String generateLiveKitApiTokenForServer(Server server) {
         AccessToken token = new AccessToken(liveKitApiKey, liveKitApiSecret);
         token.addGrants(new RoomJoin(true));
+        token.setIdentity("identity");
         token.addGrants(new RoomName(server.getName()));
         return token.toJwt();
     }

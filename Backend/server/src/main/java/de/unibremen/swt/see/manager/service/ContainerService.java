@@ -75,6 +75,15 @@ public class ContainerService {
     private String containerImageName;
 
     /**
+     * API URL for the LiveKit instance.
+     */
+    @Value("${see.app.livekit.url}")
+    private String liveKitApiUrl;
+
+    @Value("${see.app.livekit.websocket}")
+    private String liveKitWebSocketUrl;
+
+    /**
      * The port that the game server exposes inside the container.
      * <p>
      * This port will be mapped to the server's external port on the container
@@ -172,7 +181,7 @@ public class ContainerService {
         String containerId = server.getContainerId();
 
         if (containerId == null || !containerExists(containerId)) {
-            CreateContainerResponse containerResponse = createContainer(containerName, server.getContainerPort(), server.getId().toString(), server.getServerPassword());
+            CreateContainerResponse containerResponse = createContainer(containerName, server.getContainerPort(), server.getId().toString(), server.getServerPassword(), server.getName());
             containerId = containerResponse.getId();
             log.info("Created new container: {}", containerName);
         }
@@ -287,7 +296,8 @@ public class ContainerService {
             final String containerName,
             final int port,
             final String serverId,
-            final String password) {
+            final String password,
+            final String liveKitRoomName) {
         ExposedPort exposedPort = ExposedPort.udp(CONTAINER_PORT);
         PortBinding portBinding = new PortBinding(Ports.Binding.bindPort(port), exposedPort);
 
@@ -300,7 +310,9 @@ public class ContainerService {
                 .withEnv(
                         "SEE_BACKEND_API=" + backendApi,
                         "SEE_SERVER_ID=" + serverId,
-                        "SEE_SERVER_PASSWORD=" + password)::exec,
+                        "SEE_SERVER_PASSWORD=" + password,
+                        "SEE_LIVEKIT_URL="+ liveKitWebSocketUrl,
+                        "SEE_LIVEKIT_ROOM_NAME=" + liveKitRoomName)::exec,
                  MAX_RETRIES);
     }
 
