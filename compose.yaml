@@ -87,7 +87,10 @@ services:
     ports:
       - "${LIVEKIT_API_PORT}:7880"
       - "${LIVEKIT_RTC_PORT}:7881"
+      - "7882:7882"
+      #- "50000-60000:50000-60000/UDP"
       - "${LIVEKIT_TURN_PORT}:3478/UDP"
+
     volumes:
       - ./livekit.yaml:/etc/livekit.yaml
     networks:
