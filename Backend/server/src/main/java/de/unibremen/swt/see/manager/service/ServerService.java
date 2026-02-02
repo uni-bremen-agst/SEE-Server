@@ -338,7 +338,6 @@ public class ServerService {
 
             try {
                 containerService.startContainer(server);
-                createLiveKitRoom(server);
             } catch (NotModifiedException e) {
                 throw new IllegalStateException("The container is already running!", e);
             } catch (NotFoundException e) {
@@ -466,32 +465,6 @@ public class ServerService {
         token.setIdentity("identity");
         token.addGrants(new RoomName(server.getName()));
         return token.toJwt();
-    }
-
-    /**
-     * Creates a LiveKit room for the given server.
-     * The name of the room will be the server name.
-     *
-     * @param server The server to create the room for.
-     * @throws IOException Will the thrown if the room could not be created.
-     */
-    public void createLiveKitRoom(Server server) throws IOException {
-        createLiveKitRoom(server.getName());
-    }
-
-    /**
-     * Creates a LiveKit room with the given name.
-     *
-     * @param roomName The name of the room to create. Must never be null.
-     * @throws IOException Will the thrown if the room could not be created.
-     */
-    public void createLiveKitRoom(String roomName) throws IOException {
-        RoomServiceClient client = RoomServiceClient.createClient(liveKitApiUrl, liveKitApiKey, liveKitApiSecret);
-
-        Call<LivekitModels.Room> call = client.createRoom(roomName);
-
-        Response<LivekitModels.Room> response = call.execute();
-        response.body();
     }
 
     /**
