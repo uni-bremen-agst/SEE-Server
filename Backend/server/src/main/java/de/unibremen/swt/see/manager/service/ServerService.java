@@ -16,8 +16,11 @@ import de.unibremen.swt.see.manager.util.ServerLockManager;
 import io.livekit.server.*;
 import jakarta.annotation.Nullable;
 import jakarta.persistence.EntityNotFoundException;
+
 import java.io.IOException;
 import java.security.SecureRandom;
+import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
@@ -31,8 +34,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-import retrofit2.Call;
-import retrofit2.Response;
 
 /**
  * Service class for managing server-related operations.
@@ -110,6 +111,12 @@ public class ServerService {
      */
     @Value("${see.app.livekit.apiSecret}")
     private String liveKitApiSecret;
+
+    /**
+     * Duration of how long a livekit token should be valid.
+     */
+    @Value("${see.app.livekit.tokenDuration}")
+    private int liveKitTokenDuration;
 
 
     /**
@@ -211,9 +218,9 @@ public class ServerService {
      * <p>
      * The file will be crated and associated to the given server.
      *
-     * @param serverId the ID identifying the server instance
+     * @param serverId       the ID identifying the server instance
      * @param projectTypeStr the project type of the file
-     * @param multipartFile the file content
+     * @param multipartFile  the file content
      * @return the created file, or {@code null} if the server was not found or
      * an error occurred while storing the file
      */
@@ -365,7 +372,7 @@ public class ServerService {
      * @throws EntityNotFoundException if the server does not exist
      * @throws IllegalStateException   if the server is busy or already stopped
      */
-    public void stop(UUID id) throws EntityNotFoundException, IllegalStateException {
+    public void stop(UUID id) throws EntityNotFoundException, IllegalStateException, IOException {
         final Server server = serverRepo.findById(id).orElse(null);
         if (server == null) {
             throw new EntityNotFoundException("No server found with ID " + id);
@@ -387,12 +394,14 @@ public class ServerService {
         try {
             log.info("Stopping server {}", id);
             containerService.stopContainer(server);
-            //this.removeLivekitRoom(server.getName());
+            this.removeLivekitRoomIfExist(server.getName());
         } catch (NotFoundException e) {
             throw new IllegalStateException("The container to be stopped does not exist!", e);
         } catch (NotModifiedException e) {
             server.setStatus(ServerStatusType.OFFLINE);
             throw new IllegalStateException("The container is already stopped!", e);
+        } catch (IOException e) {
+            throw new IOException("Error removing livekit room", e);
         } finally {
             lock.unlock();
             log.debug("Lock released: {}", id);
@@ -463,20 +472,28 @@ public class ServerService {
         AccessToken token = new AccessToken(liveKitApiKey, liveKitApiSecret);
         token.addGrants(new RoomJoin(true));
         token.setIdentity("identity");
+        token.setExpiration(Date.from(Instant.from(LocalDateTime.now().plusMinutes(liveKitTokenDuration).toLocalDate())));
         token.addGrants(new RoomName(server.getName()));
         return token.toJwt();
     }
 
     /**
-     * Removes a LiveKit room with the given name.
+     * Removes a LiveKit room with the given name if it exists.
+     *
      * @param roomName The name of the room to remove. Must never be null.
      * @throws IOException Will the thrown if the room could not be removed.
      */
-    public void removeLivekitRoom(String roomName) throws IOException {
+    public void removeLivekitRoomIfExist(String roomName) throws IOException {
         RoomServiceClient client = RoomServiceClient.createClient(liveKitApiUrl, liveKitApiKey, liveKitApiSecret);
-        Call<Void> call = client.deleteRoom(roomName);
 
-        call.execute();
+        List<LivekitModels.Room> roomList = client
+                .listRooms()
+                .execute()
+                .body();
+
+        if (!roomList.isEmpty()) {
+            client.deleteRoom(roomName).execute();
+        }
     }
 
     /**
