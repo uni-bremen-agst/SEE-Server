@@ -57,7 +57,7 @@ Simply copy the content in you own file and adjust it to your needs.
 Note that dotfiles, filenames starting with a `.`, might be hidden depending on your operating system and configuration.
 
 > [!IMPORTANT]<br/>
-> Remember to change the admin username and password as well as the JWT secret.
+> Remember to change the admin username and password as well as the JWT secret and the Livekit access keys.
 
 | Variable                 | Description                                                   |
 |--------------------------|---------------------------------------------------------------|
@@ -70,6 +70,12 @@ Note that dotfiles, filenames starting with a `.`, might be hidden depending on 
 | `JWT_EXPIRATION`         | Duration of token validity                                    |
 | `ADD_ADMIN_USERNAME`     | Creates a new admin user account with this username           |
 | `ADD_ADMIN_PASSWORD`     | Creates a new admin user account with this password           |
+| `LIVEKIT_HOST`           | Hostname of the Livekit server to use                         |
+| `LIVEKIT_API_PORT`       | Port of the Livekit server                                    |
+| `LIVEKIT_RTC_PORT`       | RTC Port of the Livekit server                                |
+| `LIVEKIT_TURN_PORT`      | Turn Port of the Livekit server (if TURN is enabled)          |
+| `LIVEKIT_API_KEY`        | API key for the Livekit server                                |
+| `LIVEKIT_API_SECRET`     | API secret for the Livekit server                             |
 
 You can generate a new 64-bit random JWT secret using the following command:
 
@@ -87,6 +93,10 @@ Also note that with this configuration the backend will automatically find your 
 + `EXTERNAL_PORT` must be accessible over the network.
 + `DOCKER_HOST_EXTERNAL` must be a valid, reachable IPv4 address.
 + For Podman, ensure `DOCKER_HOST` points to the socket (usually under `/var/run/user/${UID}/podman/podman.sock` for rootless Podman).
+
+## Livekit Configuration
+
+
 
 ### Security Considerations
 
