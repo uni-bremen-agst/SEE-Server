@@ -213,7 +213,7 @@ public class ServerController {
             serverService.stop(id);
         } catch (EntityNotFoundException e) {
             return ResponseEntity.notFound().build();
-        } catch (IllegalStateException e) {
+        } catch (IllegalStateException | IOException e) {
             return ResponseEntity.internalServerError().body(ControllerUtils.wrapMessage(e.getMessage()));
         }
 
