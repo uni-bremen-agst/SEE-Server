@@ -267,8 +267,8 @@ public class ServerService {
      *
      * @param id the ID of the server to be deleted
      * @throws EntityNotFoundException if the server does not exist
-     * @throws IOException             if there is an error during file deletion
-     * @throws IllegalStateException   if the server is busy
+     * @throws IOException if there is an error during file deletion
+     * @throws IllegalStateException if the server is busy
      */
     public void delete(UUID id) throws EntityNotFoundException, IOException, IllegalStateException {
         final Server server = serverRepo.findById(id).orElse(null);
@@ -315,8 +315,8 @@ public class ServerService {
      *
      * @param id the ID of the server to be started
      * @throws EntityNotFoundException if the server does not exist
-     * @throws IOException             if there is an error accessing server files
-     * @throws IllegalStateException   if the server is busy or already online
+     * @throws IOException if there is an error accessing server files
+     * @throws IllegalStateException if the server is busy or already online
      */
     public void start(UUID id) throws EntityNotFoundException, IOException, IllegalStateException {
         final Server server = serverRepo.findById(id).orElse(null);
@@ -367,7 +367,7 @@ public class ServerService {
      *
      * @param id the ID of the server to be stopped
      * @throws EntityNotFoundException if the server does not exist
-     * @throws IllegalStateException   if the server is busy or already stopped
+     * @throws IllegalStateException if the server is busy or already stopped
      */
     public void stop(UUID id) throws EntityNotFoundException, IllegalStateException, IOException {
         final Server server = serverRepo.findById(id).orElse(null);
