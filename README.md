@@ -95,10 +95,6 @@ Also note that with this configuration the backend will automatically find your 
 + `DOCKER_HOST_EXTERNAL` must be a valid, reachable IPv4 address.
 + For Podman, ensure `DOCKER_HOST` points to the socket (usually under `/var/run/user/${UID}/podman/podman.sock` for rootless Podman).
 
-## Livekit Configuration
-
-
-
 ### Security Considerations
 
 The backend – by default – has complete access to the Docker server it is running on.
