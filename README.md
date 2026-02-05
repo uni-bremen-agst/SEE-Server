@@ -76,6 +76,7 @@ Note that dotfiles, filenames starting with a `.`, might be hidden depending on 
 | `LIVEKIT_TURN_PORT`      | Turn Port of the Livekit server (if TURN is enabled)          |
 | `LIVEKIT_API_KEY`        | API key for the Livekit server                                |
 | `LIVEKIT_API_SECRET`     | API secret for the Livekit server                             |
+| `LIVEKIT_TOKEN_DURATION` | Duration how long a Livekit token should be valid             |
 
 You can generate a new 64-bit random JWT secret using the following command:
 
