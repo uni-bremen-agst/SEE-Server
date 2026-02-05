@@ -472,7 +472,7 @@ public class ServerService {
         AccessToken token = new AccessToken(liveKitApiKey, liveKitApiSecret);
         token.addGrants(new RoomJoin(true));
         token.setIdentity("identity");
-        token.setExpiration(Date.from(Instant.from(LocalDateTime.now().plusMinutes(liveKitTokenDuration).toLocalDate())));
+        token.setExpiration(new Date(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(liveKitTokenDuration)));
         token.addGrants(new RoomName(server.getName()));
         return token.toJwt();
     }
