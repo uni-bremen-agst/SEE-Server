@@ -19,8 +19,6 @@ import jakarta.persistence.EntityNotFoundException;
 
 import java.io.IOException;
 import java.security.SecureRandom;
-import java.time.Instant;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
@@ -218,9 +216,9 @@ public class ServerService {
      * <p>
      * The file will be crated and associated to the given server.
      *
-     * @param serverId       the ID identifying the server instance
+     * @param serverId the ID identifying the server instance
      * @param projectTypeStr the project type of the file
-     * @param multipartFile  the file content
+     * @param multipartFile the file content
      * @return the created file, or {@code null} if the server was not found or
      * an error occurred while storing the file
      */
