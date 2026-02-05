@@ -67,16 +67,6 @@ services:
       - livekit
       - default
 
-  caddy:
-    image: livekit/caddyl4
-    command: run --config /etc/caddy.yaml --adapter yaml
-    restart: unless-stopped
-    volumes:
-      - ./caddy.yaml:/etc/caddy.yaml
-      - ./caddy_data:/data
-    networks:
-      - livekit
-
   livekit:
     image: livekit/livekit-server:latest
     command: --config /etc/livekit.yaml
