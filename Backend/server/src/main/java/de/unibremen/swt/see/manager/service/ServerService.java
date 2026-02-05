@@ -116,7 +116,6 @@ public class ServerService {
     @Value("${see.app.livekit.tokenDuration}")
     private int liveKitTokenDuration;
 
-
     /**
      * The lock manager for concurrent writes.
      */
