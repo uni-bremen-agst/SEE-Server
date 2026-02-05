@@ -368,6 +368,7 @@ public class ServerService {
      * @param id the ID of the server to be stopped
      * @throws EntityNotFoundException if the server does not exist
      * @throws IllegalStateException if the server is busy or already stopped
+     * @throws IOException if the Livekit room can't be removed
      */
     public void stop(UUID id) throws EntityNotFoundException, IllegalStateException, IOException {
         final Server server = serverRepo.findById(id).orElse(null);
