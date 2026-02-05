@@ -308,6 +308,7 @@ public class ServerController {
 
     /**
      * Returns a LiveKit token for the specified server.
+     *
      * @param id the ID of the server for which the token should be generated.
      * @return a {@link ResponseEntity} containing the generated token as a JWT when successful,
      */
@@ -319,13 +320,16 @@ public class ServerController {
     })
     @GetMapping("/livekitToken")
     @RequireAdminOrUserAndOwnerOfServer
-    public ResponseEntity<String> getLivekitToken(@RequestParam(ID_PARAMETER_NAME) UUID id){
+    public ResponseEntity<String> getLivekitToken(@RequestParam(ID_PARAMETER_NAME) UUID id) {
         Server server = serverService.get(id);
         if (server == null) {
             return ResponseEntity.notFound().build();
         }
-
-        String token = serverService.generateLiveKitApiTokenForServer(server);
-        return ResponseEntity.ok(token);
+        try {
+            String token = serverService.generateLiveKitApiTokenForServer(server);
+            return ResponseEntity.ok(token);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(ControllerUtils.wrapMessage("Failed to generate LiveKit token"));
+        }
     }
 }
