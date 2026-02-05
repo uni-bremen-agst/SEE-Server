@@ -75,11 +75,14 @@ public class ContainerService {
     private String containerImageName;
 
     /**
-     * API URL for the LiveKit instance.
+     * API URL for the Livekit instance.
      */
     @Value("${see.app.livekit.url}")
     private String liveKitApiUrl;
 
+    /**
+     * Websocket URL for the Livekit instance
+     */
     @Value("${see.app.livekit.websocket}")
     private String liveKitWebSocketUrl;
 
