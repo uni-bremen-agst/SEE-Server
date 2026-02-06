@@ -13,8 +13,10 @@ import de.unibremen.swt.see.manager.model.User;
 import de.unibremen.swt.see.manager.repository.ConfigRepository;
 import de.unibremen.swt.see.manager.repository.ServerRepository;
 import de.unibremen.swt.see.manager.util.ServerLockManager;
+import io.livekit.server.*;
 import jakarta.annotation.Nullable;
 import jakarta.persistence.EntityNotFoundException;
+
 import java.io.IOException;
 import java.security.SecureRandom;
 import java.time.ZoneId;
@@ -22,6 +24,8 @@ import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
+
+import livekit.LivekitModels;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -87,6 +91,30 @@ public class ServerService {
      */
     @Value("${see.app.docker.host.external}")
     private String externalDockerHost;
+
+    /**
+     * API URL for the LiveKit instance.
+     */
+    @Value("${see.app.livekit.url}")
+    private String liveKitApiUrl;
+
+    /**
+     * API Key for the LiveKit instance.
+     */
+    @Value("${see.app.livekit.apiKey}")
+    private String liveKitApiKey;
+
+    /**
+     * API Secret for the LiveKit instance.
+     */
+    @Value("${see.app.livekit.apiSecret}")
+    private String liveKitApiSecret;
+
+    /**
+     * Duration of how long a livekit token should be valid.
+     */
+    @Value("${see.app.livekit.tokenDuration}")
+    private int liveKitTokenDuration;
 
     /**
      * The lock manager for concurrent writes.
@@ -340,8 +368,9 @@ public class ServerService {
      * @param id the ID of the server to be stopped
      * @throws EntityNotFoundException if the server does not exist
      * @throws IllegalStateException if the server is busy or already stopped
+     * @throws IOException if the Livekit room can't be removed
      */
-    public void stop(UUID id) throws EntityNotFoundException, IllegalStateException {
+    public void stop(UUID id) throws EntityNotFoundException, IllegalStateException, IOException {
         final Server server = serverRepo.findById(id).orElse(null);
         if (server == null) {
             throw new EntityNotFoundException("No server found with ID " + id);
@@ -363,11 +392,14 @@ public class ServerService {
         try {
             log.info("Stopping server {}", id);
             containerService.stopContainer(server);
+            this.removeLivekitRoomIfExist(server.getName());
         } catch (NotFoundException e) {
             throw new IllegalStateException("The container to be stopped does not exist!", e);
         } catch (NotModifiedException e) {
             server.setStatus(ServerStatusType.OFFLINE);
             throw new IllegalStateException("The container is already stopped!", e);
+        } catch (IOException e) {
+            throw new IOException("Error removing livekit room", e);
         } finally {
             lock.unlock();
             log.debug("Lock released: {}", id);
@@ -423,6 +455,42 @@ public class ServerService {
     public void updateStatus() {
         for (Server server : getAll()) {
             updateStatus(server);
+        }
+    }
+
+    /**
+     * Generates a LiveKit API token for the given server with permission to join a server-room.
+     * <p>
+     * The name of the livekit room is the server name.
+     *
+     * @param server The server to generate the token for. Must never be null.
+     * @return The generated token.
+     */
+    public String generateLiveKitApiTokenForServer(Server server) {
+        AccessToken token = new AccessToken(liveKitApiKey, liveKitApiSecret);
+        token.addGrants(new RoomJoin(true));
+        token.setIdentity("identity");
+        token.setExpiration(new Date(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(liveKitTokenDuration)));
+        token.addGrants(new RoomName(server.getName()));
+        return token.toJwt();
+    }
+
+    /**
+     * Removes a LiveKit room with the given name if it exists.
+     *
+     * @param roomName The name of the room to remove. Must never be null.
+     * @throws IOException Will the thrown if the room could not be removed.
+     */
+    public void removeLivekitRoomIfExist(String roomName) throws IOException {
+        RoomServiceClient client = RoomServiceClient.createClient(liveKitApiUrl, liveKitApiKey, liveKitApiSecret);
+
+        List<LivekitModels.Room> roomList = client
+                .listRooms()
+                .execute()
+                .body();
+
+        if (!roomList.isEmpty()) {
+            client.deleteRoom(roomName).execute();
         }
     }
 

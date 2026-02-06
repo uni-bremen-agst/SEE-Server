@@ -213,7 +213,7 @@ public class ServerController {
             serverService.stop(id);
         } catch (EntityNotFoundException e) {
             return ResponseEntity.notFound().build();
-        } catch (IllegalStateException e) {
+        } catch (IllegalStateException | IOException e) {
             return ResponseEntity.internalServerError().body(ControllerUtils.wrapMessage(e.getMessage()));
         }
 
@@ -303,6 +303,33 @@ public class ServerController {
 
         } catch (IllegalArgumentException | IOException e) {
             return ResponseEntity.badRequest().build();
+        }
+    }
+
+    /**
+     * Returns a LiveKit token for the specified server.
+     *
+     * @param id the ID of the server for which the token should be generated.
+     * @return a {@link ResponseEntity} containing the generated token as a JWT when successful,
+     */
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Livekit token was generated successfully",
+                    content = @Content(schema = @Schema(implementation = String.class))),
+            @ApiResponse(responseCode = "404", description = "Server not found",
+                    content = @Content(schema = @Schema()))
+    })
+    @GetMapping("/livekitToken")
+    @RequireAdminOrUserAndOwnerOfServer
+    public ResponseEntity<String> getLivekitToken(@RequestParam(ID_PARAMETER_NAME) UUID id) {
+        Server server = serverService.get(id);
+        if (server == null) {
+            return ResponseEntity.notFound().build();
+        }
+        try {
+            String token = serverService.generateLiveKitApiTokenForServer(server);
+            return ResponseEntity.ok(token);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(ControllerUtils.wrapMessage("Failed to generate LiveKit token"));
         }
     }
 }

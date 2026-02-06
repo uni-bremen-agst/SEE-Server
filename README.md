@@ -57,7 +57,7 @@ Simply copy the content in you own file and adjust it to your needs.
 Note that dotfiles, filenames starting with a `.`, might be hidden depending on your operating system and configuration.
 
 > [!IMPORTANT]<br/>
-> Remember to change the admin username and password as well as the JWT secret.
+> Remember to change the admin username and password as well as the JWT secret and the Livekit access keys.
 
 | Variable                 | Description                                                   |
 |--------------------------|---------------------------------------------------------------|
@@ -70,6 +70,13 @@ Note that dotfiles, filenames starting with a `.`, might be hidden depending on 
 | `JWT_EXPIRATION`         | Duration of token validity                                    |
 | `ADD_ADMIN_USERNAME`     | Creates a new admin user account with this username           |
 | `ADD_ADMIN_PASSWORD`     | Creates a new admin user account with this password           |
+| `LIVEKIT_HOST`           | Hostname of the Livekit server to use                         |
+| `LIVEKIT_API_PORT`       | Port of the Livekit server                                    |
+| `LIVEKIT_RTC_PORT`       | RTC Port of the Livekit server                                |
+| `LIVEKIT_TURN_PORT`      | Turn Port of the Livekit server (if TURN is enabled)          |
+| `LIVEKIT_API_KEY`        | API key for the Livekit server                                |
+| `LIVEKIT_API_SECRET`     | API secret for the Livekit server                             |
+| `LIVEKIT_TOKEN_DURATION` | Duration how long a Livekit token should be valid             |
 
 You can generate a new 64-bit random JWT secret using the following command:
 

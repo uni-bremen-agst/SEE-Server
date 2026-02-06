@@ -37,6 +37,7 @@ services:
     restart: always
     depends_on:
       - traefik
+      - livekit
     volumes:
       - backend-data:/see
       # Docker daemon must be reachable from backend container to spawn game servers.
@@ -58,12 +59,42 @@ services:
       # This will add an admin account to the backend. Use with care!
       ADD_ADMIN_USERNAME: ${ADD_ADMIN_USERNAME}
       ADD_ADMIN_PASSWORD: ${ADD_ADMIN_PASSWORD}
+      LIVEKIT_API_URL: ${LIVEKIT_API_URL}
+      LIVEKIT_API_KEY: ${LIVEKIT_API_KEY}
+      LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET}
     networks:
       - traefik
+      - livekit
       - default
+
+  livekit:
+    image: livekit/livekit-server:latest
+    command: --config /etc/livekit.yaml
+    restart: unless-stopped
+    depends_on:
+      - traefik
+      - redis
+    ports:
+      - "${LIVEKIT_API_PORT}:7880"
+      - "${LIVEKIT_RTC_PORT}:7881"
+      - "7882:7882"
+      #- "50000-60000:50000-60000/UDP"
+      - "${LIVEKIT_TURN_PORT}:3478/UDP"
+
+    volumes:
+      - ./livekit.yaml:/etc/livekit.yaml
+    networks:
+      - livekit
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    networks:
+      - livekit
 
 networks:
   traefik:
+  livekit:
   default:
 
 volumes:
