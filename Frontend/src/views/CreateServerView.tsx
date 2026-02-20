@@ -89,7 +89,7 @@ function CreateServerView() {
       form.append("id", createServerResponse.data.id);
       form.append("projectType", projectFile.projectType);
       form.append("file", projectFile._localfile);
-      await axiosInstance.post("/server/addFile", form).catch((error) => {
+      await axiosInstance.post("/server/addProjectFile", form).catch((error) => {
         success = false;
         AppUtils.notifyAxiosError(error, "Error Uploading File");
       });

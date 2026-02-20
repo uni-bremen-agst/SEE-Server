@@ -134,7 +134,7 @@ public class ServerController {
      * {@code 500 Internal Server Error} if the file could not be persisted, or
      * {@code 401 Unauthorized} if access cannot be granted.
      */
-    @PostMapping("/addFile")
+    @PostMapping("/addProjectFile")
     @RequireAdmin
     public ResponseEntity<File> addFile(
             @RequestParam(ID_PARAMETER_NAME) UUID serverId,
