@@ -140,11 +140,20 @@ public class ServerController {
             @RequestParam(ID_PARAMETER_NAME) UUID serverId,
             @RequestParam("projectType") String projectType,
             @RequestParam("file") MultipartFile file) {
-        File responseFile = serverService.addFile(serverId, projectType, file);
+        File responseFile = serverService.addProjectFile(serverId, projectType, file);
         if (responseFile == null) {
             return ResponseEntity.internalServerError().build();
         }
         return ResponseEntity.ok().body(responseFile);
+    }
+
+    @PostMapping(path = "/updateProjectFile", consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    public ResponseEntity<?> updateFile(
+            @RequestParam(ID_PARAMETER_NAME) UUID serverId,
+            @RequestParam("projectType") String projectType,
+            @RequestParam("filePath") String filePath,
+            HttpServletRequest httpServletRequest) {
+        return ResponseEntity.ok().build();
     }
 
     /**
