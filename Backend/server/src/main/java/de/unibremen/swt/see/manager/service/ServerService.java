@@ -227,7 +227,7 @@ public class ServerService {
      * @return the created file, or {@code null} if the server was not found or
      * an error occurred while storing the file
      */
-    public File addFile(UUID serverId, String projectTypeStr, MultipartFile multipartFile) {
+    public File addProjectFile(UUID serverId, String projectTypeStr, MultipartFile multipartFile) {
         Optional<Server> optServer = serverRepo.findById(serverId);
         if (optServer.isEmpty()) {
             log.error("Server not found with ID: {}", serverId);
