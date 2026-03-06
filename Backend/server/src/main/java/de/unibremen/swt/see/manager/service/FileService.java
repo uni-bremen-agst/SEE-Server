@@ -73,14 +73,14 @@ public class FileService {
         }
 
         File file = new File();
-        file.setName(multipartFile.getOriginalFilename());
+        file.setName(projectType.toString() + ".zip");
         file.setContentType(multipartFile.getContentType());
         file.setServer(server);
         file.setProjectType(projectType);
 
         Path path;
         try {
-            path = storeFile(file, multipartFile);
+            path = storeProjectFile(file, multipartFile, projectType);
         } catch (IOException e) {
             throw new IOException("Error persisting file.", e);
         }
@@ -207,17 +207,21 @@ public class FileService {
      * @return the path to where the file was stored
      * @throws IOException if there was an I/O error while storing the file
      */
-    private Path storeFile(File file, MultipartFile multipartFile) throws IOException {
-        Path filePath = getPath(file);
-        if (Files.exists(filePath)) {
-            throw new IOException("File already exists: " + filePath.toString());
+    private Path storeProjectFile(File file, MultipartFile multipartFile, ProjectType projectType) throws IOException {
+        Path filePath = getServerUploadPath(file.getServer()).resolve(projectType + ".zip");
+        var dir = getServerUploadPath(file.getServer()).resolve(projectType.toString());
+        if (filePath.toString().endsWith(".zip")) {
+            try (InputStream inputStream = multipartFile.getInputStream()) {
+                Files.copy(inputStream, filePath);
+            } catch (IOException e) {
+                throw new IOException("Unable to save file: " + file.getName(), e);
+            }
+            Files.createDirectories(dir);
+            ZipFile zipFile = new ZipFile(filePath.toString());
+            zipFile.extractAll(dir.toString());
+            zipFile.close();
         }
 
-        try (InputStream inputStream = multipartFile.getInputStream()) {
-            Files.copy(inputStream, filePath);
-        } catch (IOException e) {
-            throw new IOException("Unable to save file: " + file.getName(), e);
-        }
         return filePath;
     }
 
