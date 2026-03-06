@@ -5,22 +5,25 @@ import de.unibremen.swt.see.manager.model.ProjectType;
 import de.unibremen.swt.see.manager.model.Server;
 import de.unibremen.swt.see.manager.repository.FileRepository;
 import jakarta.persistence.EntityNotFoundException;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import net.lingala.zip4j.ZipFile;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
-import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
+
+import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
 
 /**
  * Service class for managing file-related operations.
@@ -87,6 +90,39 @@ public class FileService {
         file.setSize(Files.size(path));
 
         return fileRepo.save(file);
+    }
+
+    /**
+     * Updates the content of a file in a project.
+     * @param server the server this file belongs to.
+     * @param projectTypeStr the project type of the file.
+     * @param filePath the path of the file, relative to the project directory.
+     * @param fileContents the new content of the file.
+     * @throws IOException will be thorwn, when the file cant be written
+     */
+    public void updateFileInProject(Server server, String projectTypeStr, String filePath, String fileContents) throws IOException {
+
+        Path projectPath = getServerUploadPath(server).resolve(projectTypeStr);
+        Path localFilePath = projectPath.resolve(filePath);
+
+        if (!Files.exists(localFilePath)) {
+            throw new IOException("File does not exist: " + localFilePath);
+        }
+
+        Files.writeString(localFilePath, fileContents);
+
+        Path zipPath = getServerUploadPath(server).resolve(projectTypeStr + ".zip");
+        Files.delete(zipPath);
+
+        ZipFile zipFile = new ZipFile(zipPath.toFile());
+        zipFile.addFolder(projectPath.toFile());
+        zipFile.close();
+
+        Optional<File> file = fileRepo.findByServerIdAndProjectType(server.getId(), ProjectType.valueOf(projectTypeStr));
+
+        if (file.isPresent()) {
+            file.get().setSize(Files.size(zipPath));
+        }
     }
 
     /**
@@ -204,6 +240,7 @@ public class FileService {
      *
      * @param file the prepared file metadata
      * @param multipartFile the file content
+     * @param projectType
      * @return the path to where the file was stored
      * @throws IOException if there was an I/O error while storing the file
      */

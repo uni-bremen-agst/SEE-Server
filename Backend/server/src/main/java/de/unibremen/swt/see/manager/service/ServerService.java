@@ -1,8 +1,10 @@
 package de.unibremen.swt.see.manager.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.dockerjava.api.exception.InternalServerErrorException;
 import com.github.dockerjava.api.exception.NotFoundException;
 import com.github.dockerjava.api.exception.NotModifiedException;
+import de.unibremen.swt.see.manager.controller.message.FileUpdate;
 import de.unibremen.swt.see.manager.model.Config;
 import de.unibremen.swt.see.manager.model.File;
 import de.unibremen.swt.see.manager.model.ProjectType;
@@ -18,6 +20,8 @@ import jakarta.annotation.Nullable;
 import jakarta.persistence.EntityNotFoundException;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -141,6 +145,8 @@ public class ServerService {
      */
     private final static int PASSWORD_LENGTH = 24;
 
+    private final static String LIVEKIT_FILE_SYNC_TOPIC_NAME = "file-sync";
+
     /**
      * Retrieves a server by its ID.
      *
@@ -239,6 +245,51 @@ public class ServerService {
         }
         return null;
     }
+
+    /**
+     * Updates a file of a specific project of a server.
+     * <p></p>
+     * The update will also be propagated to all other active clients on that server.
+     * @param server the server the file belongs to.
+     * @param projectTypeStr the project type of the file.
+     * @param fileName the file name of the file relative to the project.
+     * @param fileIs the file content.
+     * @param livekitSid the livekit sid the update was sent from.
+     * @throws EntityNotFoundException
+     */
+    public void updateProjectFile(Server server,
+                                  String projectTypeStr,
+                                  String fileName,
+                                  InputStream fileIs,
+                                  @Nullable String livekitSid) throws EntityNotFoundException {
+        log.info("Updating file {} of server {}", fileName, server.getName());
+
+        try {
+            String fileContent = new String(fileIs.readAllBytes(), StandardCharsets.UTF_8);
+            fileService.updateFileInProject(server, projectTypeStr, fileName, fileContent);
+            sendFileToClientViaLivekit(server, fileContent, fileName, livekitSid);
+        } catch (IOException e) {
+            log.error("Unable to update file {} in server {}: ", fileName, server.getId(), e);
+        }
+    }
+
+    private void sendFileToClientViaLivekit(Server server, String fileContent, String fileName, @Nullable() String livekitSid) throws IOException {
+        RoomServiceClient client = RoomServiceClient.createClient(liveKitApiUrl, liveKitApiKey, liveKitApiSecret);
+
+        List<String> otherParticipants = new ArrayList<>();
+        if (livekitSid != null) {
+            otherParticipants = client.listParticipants(server.getName()).execute().body().stream()
+                    .map(LivekitModels.ParticipantInfo::getSid)
+                    .filter(sid -> !sid.equals(livekitSid)).toList();
+        }
+        FileUpdate update = new FileUpdate(fileName, fileContent);
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        byte[] jsonData = objectMapper.writeValueAsBytes(update);
+
+        client.sendData(server.getName(), jsonData, LivekitModels.DataPacket.Kind.RELIABLE, Collections.emptyList(), Collections.emptyList(), LIVEKIT_FILE_SYNC_TOPIC_NAME).execute();
+    }
+
 
     /**
      * Retrieves all files for a specific server identified by its ID.

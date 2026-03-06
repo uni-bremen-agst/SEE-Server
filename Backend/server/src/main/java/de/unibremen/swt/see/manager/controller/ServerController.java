@@ -14,12 +14,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.persistence.EntityNotFoundException;
-
-import java.io.IOException;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
 import jakarta.servlet.ServletInputStream;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +23,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 /**
  * Handles HTTP requests for the /server endpoint.
@@ -152,7 +151,13 @@ public class ServerController {
             @RequestParam(ID_PARAMETER_NAME) UUID serverId,
             @RequestParam("projectType") String projectType,
             @RequestParam("filePath") String filePath,
-            HttpServletRequest httpServletRequest) {
+            @RequestParam(value = "livekitSid", required = false) String livekitSid,
+            HttpServletRequest httpServletRequest) throws IOException {
+        Server server = serverService.get(serverId);
+        if (server == null) {
+            return ResponseEntity.notFound().build();
+        }
+        serverService.updateProjectFile(server, projectType, filePath, httpServletRequest.getInputStream(), livekitSid);
         return ResponseEntity.ok().build();
     }
 
