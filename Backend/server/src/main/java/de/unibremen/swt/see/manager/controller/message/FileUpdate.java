@@ -8,8 +8,11 @@ public class FileUpdate {
 
     private String content;
 
-    public FileUpdate(String fileName, String content) {
+    private String projectType;
+
+    public FileUpdate(String fileName, String content, String projectType) {
         this.fileName = fileName;
         this.content = content;
+        this.projectType = projectType;
     }
 }

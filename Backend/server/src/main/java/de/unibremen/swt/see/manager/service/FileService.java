@@ -121,7 +121,10 @@ public class FileService {
         Optional<File> file = fileRepo.findByServerIdAndProjectType(server.getId(), ProjectType.valueOf(projectTypeStr));
 
         if (file.isPresent()) {
-            file.get().setSize(Files.size(zipPath));
+            File fileEntity = file.get();
+            fileEntity.setSize(Files.size(zipPath));
+
+            fileRepo.save(fileEntity);
         }
     }
 
