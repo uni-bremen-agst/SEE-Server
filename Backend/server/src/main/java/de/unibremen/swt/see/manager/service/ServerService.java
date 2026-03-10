@@ -22,6 +22,8 @@ import jakarta.persistence.EntityNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.SecureRandom;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -32,7 +34,10 @@ import java.util.concurrent.locks.Lock;
 import livekit.LivekitModels;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.integration.support.locks.LockRegistry;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -119,6 +124,10 @@ public class ServerService {
      */
     @Value("${see.app.livekit.tokenDuration}")
     private int liveKitTokenDuration;
+
+    @Autowired
+    @Qualifier("fileLockRegistry")
+    LockRegistry lockRegistry;
 
     /**
      * The lock manager for concurrent writes.
@@ -250,39 +259,34 @@ public class ServerService {
      * Updates a file of a specific project of a server.
      * <p></p>
      * The update will also be propagated to all other active clients on that server.
+     *
      * @param server the server the file belongs to.
      * @param projectTypeStr the project type of the file.
      * @param fileName the file name of the file relative to the project.
      * @param fileIs the file content.
-     * @param livekitSid the livekit sid the update was sent from.
      * @throws EntityNotFoundException
      */
     public void updateProjectFile(Server server,
                                   String projectTypeStr,
                                   String fileName,
-                                  InputStream fileIs,
-                                  @Nullable String livekitSid) throws EntityNotFoundException {
-        log.info("Updating file {} of server {}", fileName, server.getName());
+                                  InputStream fileIs) throws EntityNotFoundException, InterruptedException {
+        Path p = Paths.get(projectTypeStr).resolve(fileName);
+        lockRegistry.executeLocked(p, () -> {
+            log.info("Updating file {} of server {}", fileName, server.getName());
 
-        try {
-            String fileContent = new String(fileIs.readAllBytes(), StandardCharsets.UTF_8);
-            fileService.updateFileInProject(server, projectTypeStr, fileName, fileContent);
-            sendFileToClientViaLivekit(server, fileContent, fileName, livekitSid);
-        } catch (IOException e) {
-            log.error("Unable to update file {} in server {}: ", fileName, server.getId(), e);
-        }
+            try {
+                String fileContent = new String(fileIs.readAllBytes(), StandardCharsets.UTF_8);
+                fileService.updateFileInProject(server, projectTypeStr, fileName, fileContent);
+                sendFileToClientViaLivekit(server, projectTypeStr, fileContent, fileName);
+            } catch (IOException e) {
+                log.error("Unable to update file {} in server {}: ", fileName, server.getId(), e);
+            }
+        });
     }
 
-    private void sendFileToClientViaLivekit(Server server, String fileContent, String fileName, @Nullable() String livekitSid) throws IOException {
+    private void sendFileToClientViaLivekit(Server server, String projectTypeStr, String fileContent, String fileName) throws IOException {
         RoomServiceClient client = RoomServiceClient.createClient(liveKitApiUrl, liveKitApiKey, liveKitApiSecret);
-
-        List<String> otherParticipants = new ArrayList<>();
-        if (livekitSid != null) {
-            otherParticipants = client.listParticipants(server.getName()).execute().body().stream()
-                    .map(LivekitModels.ParticipantInfo::getSid)
-                    .filter(sid -> !sid.equals(livekitSid)).toList();
-        }
-        FileUpdate update = new FileUpdate(fileName, fileContent);
+        FileUpdate update = new FileUpdate(fileName, fileContent, projectTypeStr);
 
         ObjectMapper objectMapper = new ObjectMapper();
         byte[] jsonData = objectMapper.writeValueAsBytes(update);

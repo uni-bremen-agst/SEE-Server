@@ -151,13 +151,17 @@ public class ServerController {
             @RequestParam(ID_PARAMETER_NAME) UUID serverId,
             @RequestParam("projectType") String projectType,
             @RequestParam("filePath") String filePath,
-            @RequestParam(value = "livekitSid", required = false) String livekitSid,
             HttpServletRequest httpServletRequest) throws IOException {
         Server server = serverService.get(serverId);
         if (server == null) {
             return ResponseEntity.notFound().build();
         }
-        serverService.updateProjectFile(server, projectType, filePath, httpServletRequest.getInputStream(), livekitSid);
+
+        try {
+            serverService.updateProjectFile(server, projectType, filePath, httpServletRequest.getInputStream());
+        } catch (InterruptedException e) {
+            ResponseEntity.internalServerError().body(ControllerUtils.wrapMessage("Error during file update!"));
+        }
         return ResponseEntity.ok().build();
     }
 
