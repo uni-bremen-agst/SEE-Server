@@ -272,12 +272,11 @@ public class ServerService {
      * @param projectTypeStr the project type of the file.
      * @param fileName the file name of the file relative to the project.
      * @param fileIs the file content.
-     * @throws EntityNotFoundException
      */
     public void updateProjectFile(Server server,
                                   String projectTypeStr,
                                   String fileName,
-                                  InputStream fileIs) throws EntityNotFoundException, InterruptedException {
+                                  InputStream fileIs) throws InterruptedException, IllegalArgumentException {
         Path p = Paths.get(projectTypeStr).resolve(fileName);
         lockRegistry.executeLocked(p, () -> {
             log.info("Updating file {} of server {}", fileName, server.getName());

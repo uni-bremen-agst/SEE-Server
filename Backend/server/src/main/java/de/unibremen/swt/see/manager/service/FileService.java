@@ -94,16 +94,21 @@ public class FileService {
 
     /**
      * Updates the content of a file in a project.
+     *
      * @param server the server this file belongs to.
      * @param projectTypeStr the project type of the file.
      * @param filePath the path of the file, relative to the project directory.
      * @param fileContents the new content of the file.
      * @throws IOException will be thrown, when the file cant be written
+     * @throws IllegalArgumentException will be thrown when the file path is outside the project directory (to prevent path traversals).
      */
     public void updateFileInProject(Server server, String projectTypeStr, String filePath, String fileContents) throws IOException {
         Path projectPath = getServerUploadPath(server).resolve(projectTypeStr);
         Path localFilePath = projectPath.resolve(filePath);
 
+        if (!localFilePath.normalize().startsWith(projectPath)) {
+            throw new IllegalArgumentException("File path is outside of project directory: " + filePath);
+        }
         if (!Files.exists(localFilePath)) {
             throw new IOException("File does not exist: " + localFilePath);
         }

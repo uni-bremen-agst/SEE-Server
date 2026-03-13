@@ -169,7 +169,7 @@ public class ServerController {
         }
         try {
             serverService.updateProjectFile(server, projectType, filePath, httpServletRequest.getInputStream());
-        } catch (InterruptedException e) {
+        } catch (InterruptedException | IllegalArgumentException e) {
             return ResponseEntity.internalServerError().body(ControllerUtils.wrapMessage("Error during file update!"));
         } catch (IOException e) {
             return ResponseEntity.internalServerError().body(ControllerUtils.wrapMessage("Error during file update! Can't extract file from request."));
