@@ -125,7 +125,10 @@ public class ServerService {
     @Value("${see.app.livekit.tokenDuration}")
     private int liveKitTokenDuration;
 
-    LockRegistry lockRegistry;
+    /**
+     * Lock registry for concurrent file writes.
+     */
+    private final LockRegistry lockRegistry;
 
     /**
      * The lock manager for concurrent writes.
