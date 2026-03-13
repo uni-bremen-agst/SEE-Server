@@ -128,8 +128,9 @@ public class FileService {
         if (file.isPresent()) {
             ProjectFile projectFileEntity = file.get();
             projectFileEntity.setSize(Files.size(zipPath));
-
             fileRepo.save(projectFileEntity);
+        } else {
+            log.warn("ProjectFile not found for server {} and type {}, database record not updated", server.getId(), projectTypeStr);
         }
     }
 
