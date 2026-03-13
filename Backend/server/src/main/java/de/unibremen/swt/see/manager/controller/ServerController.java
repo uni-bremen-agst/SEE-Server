@@ -160,7 +160,9 @@ public class ServerController {
         try {
             serverService.updateProjectFile(server, projectType, filePath, httpServletRequest.getInputStream());
         } catch (InterruptedException e) {
-            ResponseEntity.internalServerError().body(ControllerUtils.wrapMessage("Error during file update!"));
+            return ResponseEntity.internalServerError().body(ControllerUtils.wrapMessage("Error during file update!"));
+        } catch (IOException e) {
+            return ResponseEntity.internalServerError().body(ControllerUtils.wrapMessage("Error during file update! Can't extract file from request."));
         }
         return ResponseEntity.ok().build();
     }
