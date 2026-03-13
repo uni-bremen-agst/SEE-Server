@@ -118,10 +118,10 @@ public class FileService {
         Path zipPath = getServerUploadPath(server).resolve(projectTypeStr + ".zip");
         Files.delete(zipPath);
 
-        // Rebuild Zip file with updated file
-        ZipFile zipFile = new ZipFile(zipPath.toFile());
-        zipFile.addFolder(projectPath.toFile());
-        zipFile.close();
+        // Rebuild Zip file with the updated file
+        try (ZipFile zipFile = new ZipFile(zipPath.toFile())) {
+            zipFile.addFolder(projectPath.toFile());
+        }
 
         Optional<ProjectFile> file = fileRepo.findByServerIdAndProjectType(server.getId(), ProjectType.valueOf(projectTypeStr));
 
