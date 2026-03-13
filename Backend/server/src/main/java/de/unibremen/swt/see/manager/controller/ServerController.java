@@ -146,6 +146,17 @@ public class ServerController {
         return ResponseEntity.ok().body(responseFile);
     }
 
+    /**
+     * Updates a file in a project of an existing server.
+     * <p/>
+     * Note that the file will be updated wins "last write wins". If the file is edited my multiple users, the last write to the fill will be kept.
+     *
+     * @param serverId The ID of the server.
+     * @param projectType The project type the file belongs to.
+     * @param filePath The path of the file, relative to the project directory.
+     * @param httpServletRequest The HTTP request containing the file content.
+     * @return
+     */
     @PostMapping(path = "/updateProjectFile", consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     public ResponseEntity<?> updateFile(
             @RequestParam(ID_PARAMETER_NAME) UUID serverId,
