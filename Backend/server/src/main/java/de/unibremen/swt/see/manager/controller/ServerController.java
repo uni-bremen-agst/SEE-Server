@@ -135,15 +135,15 @@ public class ServerController {
      */
     @PostMapping("/addProjectFile")
     @RequireAdmin
-    public ResponseEntity<File> addFile(
+    public ResponseEntity<ProjectFile> addFile(
             @RequestParam(ID_PARAMETER_NAME) UUID serverId,
             @RequestParam("projectType") String projectType,
             @RequestParam("file") MultipartFile file) {
-        File responseFile = serverService.addProjectFile(serverId, projectType, file);
-        if (responseFile == null) {
+        ProjectFile responseProjectFile = serverService.addProjectFile(serverId, projectType, file);
+        if (responseProjectFile == null) {
             return ResponseEntity.internalServerError().build();
         }
-        return ResponseEntity.ok().body(responseFile);
+        return ResponseEntity.ok().body(responseProjectFile);
     }
 
     /**
@@ -162,12 +162,11 @@ public class ServerController {
             @RequestParam(ID_PARAMETER_NAME) UUID serverId,
             @RequestParam("projectType") String projectType,
             @RequestParam("filePath") String filePath,
-            HttpServletRequest httpServletRequest) throws IOException {
+            HttpServletRequest httpServletRequest) {
         Server server = serverService.get(serverId);
         if (server == null) {
             return ResponseEntity.notFound().build();
         }
-
         try {
             serverService.updateProjectFile(server, projectType, filePath, httpServletRequest.getInputStream());
         } catch (InterruptedException e) {
@@ -179,6 +178,7 @@ public class ServerController {
     }
 
     /**
+     * throw new RuntimeException(e);
      * Deletes the server with the specified ID.
      * <p>
      * Deletes the server along with its files.
@@ -260,7 +260,7 @@ public class ServerController {
      */
     @GetMapping("/files")
     @RequireAdminOrUserAndOwnerOfServer
-    public ResponseEntity<List<File>> getFiles(@RequestParam(ID_PARAMETER_NAME) UUID id) {
+    public ResponseEntity<List<ProjectFile>> getFiles(@RequestParam(ID_PARAMETER_NAME) UUID id) {
         return ResponseEntity.ok().body(serverService.getFilesForServer(id));
     }
 

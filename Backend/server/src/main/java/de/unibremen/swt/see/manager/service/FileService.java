@@ -1,6 +1,6 @@
 package de.unibremen.swt.see.manager.service;
 
-import de.unibremen.swt.see.manager.model.File;
+import de.unibremen.swt.see.manager.model.ProjectFile;
 import de.unibremen.swt.see.manager.model.ProjectType;
 import de.unibremen.swt.see.manager.model.Server;
 import de.unibremen.swt.see.manager.repository.FileRepository;
@@ -70,26 +70,26 @@ public class FileService {
      * @throws java.io.IOException if there was an I/O error while storing the
      * file
      */
-    public File create(Server server, ProjectType projectType, MultipartFile multipartFile) throws IOException {
+    public ProjectFile create(Server server, ProjectType projectType, MultipartFile multipartFile) throws IOException {
         if (multipartFile.isEmpty()) {
             return null;
         }
 
-        File file = new File();
-        file.setName(projectType.toString() + ".zip");
-        file.setContentType(multipartFile.getContentType());
-        file.setServer(server);
-        file.setProjectType(projectType);
+        ProjectFile projectFile = new ProjectFile();
+        projectFile.setName(projectType.toString() + ".zip");
+        projectFile.setContentType(multipartFile.getContentType());
+        projectFile.setServer(server);
+        projectFile.setProjectType(projectType);
 
         Path path;
         try {
-            path = storeProjectFile(file, multipartFile, projectType);
+            path = storeProjectFile(projectFile, multipartFile, projectType);
         } catch (IOException e) {
             throw new IOException("Error persisting file.", e);
         }
-        file.setSize(Files.size(path));
+        projectFile.setSize(Files.size(path));
 
-        return fileRepo.save(file);
+        return fileRepo.save(projectFile);
     }
 
     /**
@@ -98,10 +98,9 @@ public class FileService {
      * @param projectTypeStr the project type of the file.
      * @param filePath the path of the file, relative to the project directory.
      * @param fileContents the new content of the file.
-     * @throws IOException will be thorwn, when the file cant be written
+     * @throws IOException will be thrown, when the file cant be written
      */
     public void updateFileInProject(Server server, String projectTypeStr, String filePath, String fileContents) throws IOException {
-
         Path projectPath = getServerUploadPath(server).resolve(projectTypeStr);
         Path localFilePath = projectPath.resolve(filePath);
 
@@ -114,17 +113,18 @@ public class FileService {
         Path zipPath = getServerUploadPath(server).resolve(projectTypeStr + ".zip");
         Files.delete(zipPath);
 
+        // Rebuild Zip file with updated file
         ZipFile zipFile = new ZipFile(zipPath.toFile());
         zipFile.addFolder(projectPath.toFile());
         zipFile.close();
 
-        Optional<File> file = fileRepo.findByServerIdAndProjectType(server.getId(), ProjectType.valueOf(projectTypeStr));
+        Optional<ProjectFile> file = fileRepo.findByServerIdAndProjectType(server.getId(), ProjectType.valueOf(projectTypeStr));
 
         if (file.isPresent()) {
-            File fileEntity = file.get();
-            fileEntity.setSize(Files.size(zipPath));
+            ProjectFile projectFileEntity = file.get();
+            projectFileEntity.setSize(Files.size(zipPath));
 
-            fileRepo.save(fileEntity);
+            fileRepo.save(projectFileEntity);
         }
     }
 
@@ -134,9 +134,9 @@ public class FileService {
      * @param fileId the ID of the file to retrieve
      * @return the file if found, or {@code null} if not found
      */
-    public File get(UUID fileId) {
+    public ProjectFile get(UUID fileId) {
         log.info("Fetching file by id {}", fileId);
-        Optional<File> optFile = fileRepo.findById(fileId);
+        Optional<ProjectFile> optFile = fileRepo.findById(fileId);
         if (optFile.isEmpty()) {
             log.error("File not found in db: {}", fileId);
             return null;
@@ -152,10 +152,10 @@ public class FileService {
      * @return file if found, or {@code null} if not found
      * @throws EntityNotFoundException if server or file could not be found
      */
-    public File getByServerAndProjectType(UUID serverId, ProjectType projectType) {
+    public ProjectFile getByServerAndProjectType(UUID serverId, ProjectType projectType) {
         log.info("Fetching file for server and project type: {}; {}", serverId, projectType);
 
-        Optional<File> optFile = fileRepo.findByServerIdAndProjectType(serverId, projectType);
+        Optional<ProjectFile> optFile = fileRepo.findByServerIdAndProjectType(serverId, projectType);
         if (optFile.isEmpty()) {
             throw new EntityNotFoundException("File not found by project type " + projectType);
         }
@@ -170,12 +170,12 @@ public class FileService {
      * <p>
      * Does not throw I/O exception if the file to delete was not found.
      *
-     * @param file the file to be deleted
+     * @param projectFile the file to be deleted
      * @throws java.io.IOException if there was an I/O error while deleting the
      * file
      */
-    public void delete(File file) throws IOException {
-        Path filePath = getPath(file);
+    public void delete(ProjectFile projectFile) throws IOException {
+        Path filePath = getPath(projectFile);
         log.info("Removing file {}", filePath);
 
         if (Files.exists(filePath) && !Files.isRegularFile(filePath)) {
@@ -187,7 +187,7 @@ public class FileService {
         } catch (NoSuchFileException e) {
             log.warn("File to delete does not exist: {}", filePath);
         }
-        fileRepo.delete(file);
+        fileRepo.delete(projectFile);
     }
 
     /**
@@ -198,17 +198,17 @@ public class FileService {
      * Does not throw I/O exception if the file to delete was not found.
      *
      * @param fileId ID of the file to be deleted
-     * @throws java.io.IOException if {@link #delete(File)} throws one
+     * @throws java.io.IOException if {@link #delete(ProjectFile)} throws one
      * @throws EntityNotFoundException if no file exists with given ID
      * @see #get(UUID)
-     * @see #delete(File)
+     * @see #delete(ProjectFile)
      */
     public void delete(UUID fileId) throws IOException {
-        File file = get(fileId);
-        if (file == null) {
+        ProjectFile projectFile = get(fileId);
+        if (projectFile == null) {
             throw new EntityNotFoundException("No entity found with ID " + fileId);
         }
-        delete(file);
+        delete(projectFile);
     }
 
     /**
@@ -217,7 +217,7 @@ public class FileService {
      * @param server the server that the files belong to
      * @return a list containing all files of the given server
      */
-    public List<File> getByServer(Server server) {
+    public List<ProjectFile> getByServer(Server server) {
         return fileRepo.findByServer(server);
     }
 
@@ -228,10 +228,10 @@ public class FileService {
      * @throws IOException if a file cannot be deleted
      */
     public void deleteFilesByServer(Server server) throws IOException {
-        List<File> files = getByServer(server);
+        List<ProjectFile> projectFiles = getByServer(server);
 
-        for (File file : files) {
-            delete(file);
+        for (ProjectFile projectFile : projectFiles) {
+            delete(projectFile);
         }
 
         Files.delete(getServerUploadPath(server));
@@ -241,20 +241,20 @@ public class FileService {
     /**
      * Stores given file on local file system.
      *
-     * @param file the prepared file metadata
+     * @param projectFile the prepared file metadata
      * @param multipartFile the file content
      * @param projectType
      * @return the path to where the file was stored
      * @throws IOException if there was an I/O error while storing the file
      */
-    private Path storeProjectFile(File file, MultipartFile multipartFile, ProjectType projectType) throws IOException {
-        Path filePath = getServerUploadPath(file.getServer()).resolve(projectType + ".zip");
-        var dir = getServerUploadPath(file.getServer()).resolve(projectType.toString());
+    private Path storeProjectFile(ProjectFile projectFile, MultipartFile multipartFile, ProjectType projectType) throws IOException {
+        Path filePath = getServerUploadPath(projectFile.getServer()).resolve(projectType + ".zip");
+        var dir = getServerUploadPath(projectFile.getServer()).resolve(projectType.toString());
         if (filePath.toString().endsWith(".zip")) {
             try (InputStream inputStream = multipartFile.getInputStream()) {
                 Files.copy(inputStream, filePath);
             } catch (IOException e) {
-                throw new IOException("Unable to save file: " + file.getName(), e);
+                throw new IOException("Unable to save file: " + projectFile.getName(), e);
             }
             Files.createDirectories(dir);
             ZipFile zipFile = new ZipFile(filePath.toString());
@@ -299,18 +299,18 @@ public class FileService {
      * Gets the server path and appends the file name. File name and server must
      * not be {@code null}.
      *
-     * @param file the file to which the path should be assembled
+     * @param projectFile the file to which the path should be assembled
      * @return file system path for the given file
      * @throws IOException if one is thrown by
      * {@link #getServerUploadPath(Server)}
      * @see #getServerUploadPath(Server)
      */
-    public Path getPath(File file) throws IOException {
-        String fileName = file.getName();
+    public Path getPath(ProjectFile projectFile) throws IOException {
+        String fileName = projectFile.getName();
         if (fileName == null || fileName.isEmpty()) {
             throw new RuntimeException("File name must not be empty!");
         }
-        return getServerUploadPath(file.getServer()).resolve(fileName);
+        return getServerUploadPath(projectFile.getServer()).resolve(fileName);
     }
 
     /**

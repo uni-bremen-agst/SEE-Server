@@ -1,6 +1,6 @@
 package de.unibremen.swt.see.manager.controller;
 
-import de.unibremen.swt.see.manager.model.File;
+import de.unibremen.swt.see.manager.model.ProjectFile;
 import de.unibremen.swt.see.manager.service.FileService;
 import de.unibremen.swt.see.manager.service.ServerService;
 import jakarta.persistence.EntityNotFoundException;
@@ -72,11 +72,11 @@ public class FileController {
     @GetMapping("/get")
     @PreAuthorize("hasRole('ADMIN') or hasRole('USER') and @accessControlService.canAccessFile(principal.id, #id)")
     public ResponseEntity<?> getFile(@RequestParam("id") UUID id) {
-        File file = fileService.get(id);
-        if (file == null) {
+        ProjectFile projectFile = fileService.get(id);
+        if (projectFile == null) {
             return ResponseEntity.badRequest().body(ControllerUtils.wrapMessage("File with specified ID does not exist!"));
         }
-        return ResponseEntity.ok().body(file);
+        return ResponseEntity.ok().body(projectFile);
     }
 
     /**
@@ -92,13 +92,13 @@ public class FileController {
     @GetMapping("/download")
     @PreAuthorize("hasRole('ADMIN') or hasRole('USER') and @accessControlService.canAccessFile(principal.id, #id)")
     public ResponseEntity<?> downloadFile(@RequestParam("id") UUID id) {
-        File file = fileService.get(id);
-        if (file == null) {
+        ProjectFile projectFile = fileService.get(id);
+        if (projectFile == null) {
             return ResponseEntity.badRequest().body(ControllerUtils.wrapMessage("File with specified ID does not exist!"));
         }
 
         try {
-            return buildResponseEntity(file, true);
+            return buildResponseEntity(projectFile, true);
         } catch (IOException e) {
             return ResponseEntity.internalServerError().body(ControllerUtils.wrapMessage("Error reading file."));
         }
@@ -111,19 +111,19 @@ public class FileController {
      * HTTP header field is set to {@code attachment}, so that the client will
      * usually display a "save as…" dialog.
      *
-     * @param file the file to be used in the response
+     * @param projectFile the file to be used in the response
      * @param attachment if a "save as…" dialog should be triggered
      * @return the {@code ResponseEntity} with the given file
      * @throws IOException if the file is missing or cannot be accessed
      */
-    private ResponseEntity<Resource> buildResponseEntity(File file, boolean attachment) throws IOException {
-        Resource resource = new FileSystemResource(fileService.getPath(file));
+    private ResponseEntity<Resource> buildResponseEntity(ProjectFile projectFile, boolean attachment) throws IOException {
+        Resource resource = new FileSystemResource(fileService.getPath(projectFile));
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
-        headers.setContentLength(file.getSize());
+        headers.setContentLength(projectFile.getSize());
         if (attachment) {
-            headers.setContentDisposition(ContentDisposition.attachment().filename(file.getName()).build());
+            headers.setContentDisposition(ContentDisposition.attachment().filename(projectFile.getName()).build());
         }
 
         return ResponseEntity.ok().headers(headers).<Resource>body(resource);

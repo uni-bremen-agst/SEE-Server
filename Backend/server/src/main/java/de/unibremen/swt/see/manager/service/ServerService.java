@@ -6,7 +6,7 @@ import com.github.dockerjava.api.exception.NotFoundException;
 import com.github.dockerjava.api.exception.NotModifiedException;
 import de.unibremen.swt.see.manager.controller.message.FileUpdate;
 import de.unibremen.swt.see.manager.model.Config;
-import de.unibremen.swt.see.manager.model.File;
+import de.unibremen.swt.see.manager.model.ProjectFile;
 import de.unibremen.swt.see.manager.model.ProjectType;
 import de.unibremen.swt.see.manager.model.RoleType;
 import de.unibremen.swt.see.manager.model.Server;
@@ -244,7 +244,7 @@ public class ServerService {
      * @return the created file, or {@code null} if the server was not found or
      * an error occurred while storing the file
      */
-    public File addProjectFile(UUID serverId, String projectTypeStr, MultipartFile multipartFile) {
+    public ProjectFile addProjectFile(UUID serverId, String projectTypeStr, MultipartFile multipartFile) {
         Optional<Server> optServer = serverRepo.findById(serverId);
         if (optServer.isEmpty()) {
             log.error("Server not found with ID: {}", serverId);
@@ -309,7 +309,7 @@ public class ServerService {
      * @param id the ID of the server
      * @return a list containing all files of the given server
      */
-    public List<File> getFilesForServer(UUID id) {
+    public List<ProjectFile> getFilesForServer(UUID id) {
         Optional<Server> optServer = serverRepo.findById(id);
         if (optServer.isEmpty()) {
             return Collections.emptyList();

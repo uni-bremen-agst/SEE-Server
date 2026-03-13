@@ -1,6 +1,6 @@
 package de.unibremen.swt.see.manager.repository;
 
-import de.unibremen.swt.see.manager.model.File;
+import de.unibremen.swt.see.manager.model.ProjectFile;
 import de.unibremen.swt.see.manager.model.ProjectType;
 import de.unibremen.swt.see.manager.model.Server;
 import java.util.List;
@@ -10,15 +10,15 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 /**
- * Repository interface for managing {@link File} entities.
+ * Repository interface for managing {@link ProjectFile} entities.
  * <p>
  * This interface extends {@link JpaRepository} to provide CRUD operations for
- * {@link File} entities.
+ * {@link ProjectFile} entities.
  *
- * @see File
+ * @see ProjectFile
  */
 @Repository
-public interface FileRepository extends JpaRepository<File, UUID> {
+public interface FileRepository extends JpaRepository<ProjectFile, UUID> {
 
     /**
      * Retrieves all file entities from the database that are associated with
@@ -31,7 +31,7 @@ public interface FileRepository extends JpaRepository<File, UUID> {
      * @return a list containing files associated to given server, or an empty
      * list if no such files exist
      */
-    List<File> findByServer(Server server);
+    List<ProjectFile> findByServer(Server server);
 
     /**
      * Retrieves a file by its project type and server association.
@@ -45,7 +45,7 @@ public interface FileRepository extends JpaRepository<File, UUID> {
      * @return an {@link Optional} containing the file if existent, or an empty
      * {@code Optional} if no such file exists
      */
-    Optional<File> findByServerIdAndProjectType(UUID serverId, ProjectType projectType);
+    Optional<ProjectFile> findByServerIdAndProjectType(UUID serverId, ProjectType projectType);
 
     /**
      * Deletes all file entities from the database that are associated with the
