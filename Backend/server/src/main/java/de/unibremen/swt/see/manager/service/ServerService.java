@@ -125,8 +125,6 @@ public class ServerService {
     @Value("${see.app.livekit.tokenDuration}")
     private int liveKitTokenDuration;
 
-    @Autowired
-    @Qualifier("fileLockRegistry")
     LockRegistry lockRegistry;
 
     /**
@@ -155,6 +153,16 @@ public class ServerService {
     private final static int PASSWORD_LENGTH = 24;
 
     private final static String LIVEKIT_FILE_SYNC_TOPIC_NAME = "file-sync";
+
+    @Autowired
+    public ServerService(ConfigRepository configRepo, ServerRepository serverRepo, FileService fileService, ContainerService containerService, UserService userService, @Qualifier("fileLockRegistry") LockRegistry lockRegistry) {
+        this.configRepo = configRepo;
+        this.serverRepo = serverRepo;
+        this.fileService = fileService;
+        this.containerService = containerService;
+        this.userService = userService;
+        this.lockRegistry = lockRegistry;
+    }
 
     /**
      * Retrieves a server by its ID.
