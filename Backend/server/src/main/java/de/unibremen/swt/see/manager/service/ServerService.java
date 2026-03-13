@@ -279,7 +279,7 @@ public class ServerService {
     public void updateProjectFile(Server server,
                                   String projectTypeStr,
                                   String fileName,
-                                  InputStream fileIs) throws InterruptedException, IllegalArgumentException {
+                                  InputStream fileIs) throws InterruptedException, IllegalArgumentException, IOException {
         Path p = Paths.get(projectTypeStr).resolve(fileName);
         lockRegistry.executeLocked(p, () -> {
             log.info("Updating file {} of server {}", fileName, server.getName());
@@ -290,6 +290,7 @@ public class ServerService {
                 sendFileToClientViaLivekit(server, projectTypeStr, fileContent, fileName);
             } catch (IOException e) {
                 log.error("Unable to update file {} in server {}: ", fileName, server.getId(), e);
+                throw e;
             }
         });
     }
