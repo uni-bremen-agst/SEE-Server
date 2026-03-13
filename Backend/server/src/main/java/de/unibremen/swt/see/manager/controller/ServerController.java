@@ -158,6 +158,7 @@ public class ServerController {
      * @return
      */
     @PostMapping(path = "/updateProjectFile", consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    @RequireAdminOrUserAndOwnerOfServer
     public ResponseEntity<?> updateFile(
             @RequestParam(ID_PARAMETER_NAME) UUID serverId,
             @RequestParam("projectType") String projectType,
