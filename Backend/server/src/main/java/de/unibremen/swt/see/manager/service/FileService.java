@@ -24,6 +24,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 /**
  * Service class for managing file-related operations.
@@ -92,6 +93,38 @@ public class FileService {
         return fileRepo.save(projectFile);
     }
 
+    private Path getFilePathSanitized(Path projectPath, String filePath) throws IOException {
+        Path localFilePath = projectPath.resolve(filePath);
+        if (!localFilePath.normalize().startsWith(projectPath)) {
+            throw new IllegalArgumentException("File path is outside of project directory: " + filePath);
+        }
+        if (!Files.exists(localFilePath)) {
+            throw new IOException("File does not exist: " + localFilePath);
+        }
+        return localFilePath;
+    }
+
+    private void rebuildZipCacheFile(Server server, String projectType, Path projectPath) throws IOException {
+
+        Path zipPath = getServerUploadPath(server).resolve(projectType + ".zip");
+        Files.delete(zipPath);
+
+        // Rebuild Zip file with the updated file
+        try (ZipFile zipFile = new ZipFile(zipPath.toFile())) {
+            zipFile.addFolder(projectPath.toFile());
+        }
+
+        Optional<ProjectFile> file = fileRepo.findByServerIdAndProjectType(server.getId(), ProjectType.valueOf(projectType));
+
+        if (file.isPresent()) {
+            ProjectFile projectFileEntity = file.get();
+            projectFileEntity.setSize(Files.size(zipPath));
+            fileRepo.save(projectFileEntity);
+        } else {
+            log.warn("ProjectFile not found for server {} and type {}, database record not updated", server.getId(), projectType);
+        }
+    }
+
     /**
      * Updates the content of a file in a project.
      *
@@ -104,34 +137,46 @@ public class FileService {
      */
     public void updateFileInProject(Server server, String projectTypeStr, String filePath, String fileContents) throws IOException {
         Path projectPath = getServerUploadPath(server).resolve(projectTypeStr);
-        Path localFilePath = projectPath.resolve(filePath);
-
-        if (!localFilePath.normalize().startsWith(projectPath)) {
-            throw new IllegalArgumentException("File path is outside of project directory: " + filePath);
-        }
-        if (!Files.exists(localFilePath)) {
-            throw new IOException("File does not exist: " + localFilePath);
-        }
+        Path localFilePath = getFilePathSanitized(projectPath, filePath);
 
         Files.writeString(localFilePath, fileContents);
 
-        Path zipPath = getServerUploadPath(server).resolve(projectTypeStr + ".zip");
-        Files.delete(zipPath);
+        rebuildZipCacheFile(server, projectTypeStr, projectPath);
+//        Path zipPath = getServerUploadPath(server).resolve(projectTypeStr + ".zip");
+//        Files.delete(zipPath);
+//
+//        // Rebuild Zip file with the updated file
+//        try (ZipFile zipFile = new ZipFile(zipPath.toFile())) {
+//            zipFile.addFolder(projectPath.toFile());
+//        }
+//
+//        Optional<ProjectFile> file = fileRepo.findByServerIdAndProjectType(server.getId(), ProjectType.valueOf(projectTypeStr));
+//
+//        if (file.isPresent()) {
+//            ProjectFile projectFileEntity = file.get();
+//            projectFileEntity.setSize(Files.size(zipPath));
+//            fileRepo.save(projectFileEntity);
+//        } else {
+//            log.warn("ProjectFile not found for server {} and type {}, database record not updated", server.getId(), projectTypeStr);
+//        }
+    }
 
-        // Rebuild Zip file with the updated file
-        try (ZipFile zipFile = new ZipFile(zipPath.toFile())) {
-            zipFile.addFolder(projectPath.toFile());
-        }
+    public void renameFileInProject(Server server, String projectType, String filePath, String newFilePath) throws IOException {
+        Path projectPath = getServerUploadPath(server).resolve(projectType);
+        Path localOldFilePath = getFilePathSanitized(projectPath, filePath);
+        //Path localNewFilePath = projectPath.resolve(filePath);
+        Path localNewFilePath = projectPath.resolve(newFilePath);
 
-        Optional<ProjectFile> file = fileRepo.findByServerIdAndProjectType(server.getId(), ProjectType.valueOf(projectTypeStr));
+        Files.move(localOldFilePath, localNewFilePath, REPLACE_EXISTING);
+        rebuildZipCacheFile(server, projectType, projectPath);
+    }
 
-        if (file.isPresent()) {
-            ProjectFile projectFileEntity = file.get();
-            projectFileEntity.setSize(Files.size(zipPath));
-            fileRepo.save(projectFileEntity);
-        } else {
-            log.warn("ProjectFile not found for server {} and type {}, database record not updated", server.getId(), projectTypeStr);
-        }
+    public void deleteFileInProject(Server server, String projectType, String filePath) throws IOException {
+        Path projectPath = getServerUploadPath(server).resolve(projectType);
+        Path localFilePath = getFilePathSanitized(projectPath, filePath);
+
+        Files.delete(localFilePath);
+        rebuildZipCacheFile(server, projectType, projectPath);
     }
 
     /**
@@ -330,5 +375,6 @@ public class FileService {
         int idx = fileName.lastIndexOf('.');
         return (idx != -1) ? fileName.substring(idx + 1) : "";
     }
+
 
 }

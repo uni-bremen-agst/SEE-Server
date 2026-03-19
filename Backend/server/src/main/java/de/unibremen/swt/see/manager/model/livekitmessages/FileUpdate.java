@@ -1,4 +1,4 @@
-package de.unibremen.swt.see.manager.controller.message;
+package de.unibremen.swt.see.manager.model.livekitmessages;
 
 import lombok.Data;
 
@@ -7,17 +7,7 @@ import lombok.Data;
  * This will be sent via livekit.
  */
 @Data
-public class FileUpdate {
-
-    /**
-     * The filename relative to the project directory.
-     */
-    private String fileName;
-
-    /**
-     * The type of the project.
-     */
-    private String projectType;
+public class FileUpdate extends FileMessage {
 
     /**
      * The new content of the file.
@@ -32,8 +22,7 @@ public class FileUpdate {
      * @param projectType The type of the project.
      */
     public FileUpdate(String fileName, String content, String projectType) {
-        this.fileName = fileName;
+        super(fileName, projectType);
         this.content = content;
-        this.projectType = projectType;
     }
 }

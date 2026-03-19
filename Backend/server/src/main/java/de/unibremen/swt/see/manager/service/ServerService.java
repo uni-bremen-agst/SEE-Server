@@ -1,10 +1,13 @@
 package de.unibremen.swt.see.manager.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.dockerjava.api.exception.InternalServerErrorException;
 import com.github.dockerjava.api.exception.NotFoundException;
 import com.github.dockerjava.api.exception.NotModifiedException;
-import de.unibremen.swt.see.manager.controller.message.FileUpdate;
+import de.unibremen.swt.see.manager.model.livekitmessages.FileMessage;
+import de.unibremen.swt.see.manager.model.livekitmessages.FileRename;
+import de.unibremen.swt.see.manager.model.livekitmessages.FileUpdate;
 import de.unibremen.swt.see.manager.model.Config;
 import de.unibremen.swt.see.manager.model.ProjectFile;
 import de.unibremen.swt.see.manager.model.ProjectType;
@@ -34,8 +37,6 @@ import java.util.concurrent.locks.Lock;
 import livekit.LivekitModels;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.integration.support.locks.LockRegistry;
 import org.springframework.stereotype.Service;
@@ -155,17 +156,11 @@ public class ServerService {
      */
     private final static int PASSWORD_LENGTH = 24;
 
-    private final static String LIVEKIT_FILE_SYNC_TOPIC_NAME = "file-sync";
+    private final static String LIVEKIT_FILE_SYNC_TOPIC_NAME = "file-update";
 
-    @Autowired
-    public ServerService(ConfigRepository configRepo, ServerRepository serverRepo, FileService fileService, ContainerService containerService, UserService userService, @Qualifier("fileLockRegistry") LockRegistry lockRegistry) {
-        this.configRepo = configRepo;
-        this.serverRepo = serverRepo;
-        this.fileService = fileService;
-        this.containerService = containerService;
-        this.userService = userService;
-        this.lockRegistry = lockRegistry;
-    }
+    private final static String LIVEKIT_FILE_RENAME_TOPIC_NAME = "file-rename";
+
+    private final static String LIVEKIT_FILE_DELETE_TOPIC_NAME = "file-rename";
 
     /**
      * Retrieves a server by its ID.
@@ -287,7 +282,7 @@ public class ServerService {
             try {
                 String fileContent = new String(fileIs.readAllBytes(), StandardCharsets.UTF_8);
                 fileService.updateFileInProject(server, projectTypeStr, fileName, fileContent);
-                sendFileToClientViaLivekit(server, projectTypeStr, fileContent, fileName);
+                sendFileUpdateToClientViaLivekit(server, projectTypeStr, fileContent, fileName);
             } catch (IOException e) {
                 log.error("Unable to update file {} in server {}: ", fileName, server.getId(), e);
                 throw e;
@@ -295,14 +290,65 @@ public class ServerService {
         });
     }
 
-    private void sendFileToClientViaLivekit(Server server, String projectTypeStr, String fileContent, String fileName) throws IOException {
-        RoomServiceClient client = RoomServiceClient.createClient(liveKitApiUrl, liveKitApiKey, liveKitApiSecret);
+    public void renameProjectFile(Server server, String projectType, String filePath, String newFilePath) throws InterruptedException, IOException {
+        Path p = Paths.get(projectType).resolve(filePath);
+
+        lockRegistry.executeLocked(p, () -> {
+            log.info("Renaming file {} of server {}", filePath, server.getName());
+
+            fileService.renameFileInProject(server, projectType, filePath, newFilePath);
+            sendFileRenameToClientViaLivekkit(server, projectType, filePath, newFilePath);
+        });
+    }
+
+    public void deleteProjectFile(Server server, String projectType, String filePath) throws InterruptedException, IOException {
+        Path p = Paths.get(projectType).resolve(filePath);
+        lockRegistry.executeLocked(p, () -> {
+            log.info("Deleting file {} of server {}", filePath, server.getName());
+
+            fileService.deleteFileInProject(server, projectType, filePath);
+            sendFileDeleteToClientViaLivekkit(server, projectType, filePath);
+        });
+    }
+
+    private void sendFileDeleteToClientViaLivekkit(Server server, String projectTypeStr, String fileName) throws IOException {
+        FileMessage delete = new FileMessage(fileName, projectTypeStr);
+        encodeMessageAndSend(delete, server.getName(), LIVEKIT_FILE_DELETE_TOPIC_NAME);
+    }
+
+    private void sendFileRenameToClientViaLivekkit(Server server, String projectTypeStr, String oldFileName, String newFileName) throws IOException {
+        FileRename rename = new FileRename(oldFileName, newFileName, projectTypeStr);
+        encodeMessageAndSend(rename, server.getName(), LIVEKIT_FILE_RENAME_TOPIC_NAME);
+    }
+
+    /**
+     *
+     * @param server
+     * @param projectTypeStr
+     * @param fileContent
+     * @param fileName
+     * @throws IOException
+     */
+    private void sendFileUpdateToClientViaLivekit(Server server, String projectTypeStr, String fileContent, String fileName) throws IOException {
         FileUpdate update = new FileUpdate(fileName, fileContent, projectTypeStr);
+        encodeMessageAndSend(update, server.getName(), LIVEKIT_FILE_SYNC_TOPIC_NAME);
+    }
+
+    /**
+     * Encodes a given message object into a JSON string and sends it to a Livekit room.
+     *
+     * @param obj The object to be encoded and sent.
+     * @param serverName The name of the server to send the message to.
+     * @param topic The topic to send the message to.
+     * @throws IOException If there is an error while encoding or sending the message.
+     */
+    private void encodeMessageAndSend(Object obj, String serverName, String topic) throws IOException {
+        RoomServiceClient client = RoomServiceClient.createClient(liveKitApiUrl, liveKitApiKey, liveKitApiSecret);
 
         ObjectMapper objectMapper = new ObjectMapper();
-        byte[] jsonData = objectMapper.writeValueAsBytes(update);
+        byte[] jsonData = objectMapper.writeValueAsBytes(obj);
 
-        client.sendData(server.getName(), jsonData, LivekitModels.DataPacket.Kind.RELIABLE, Collections.emptyList(), Collections.emptyList(), LIVEKIT_FILE_SYNC_TOPIC_NAME).execute();
+        client.sendData(serverName, jsonData, LivekitModels.DataPacket.Kind.RELIABLE, Collections.emptyList(), Collections.emptyList(), topic).execute();
     }
 
 
@@ -618,5 +664,4 @@ public class ServerService {
         }
         return configs.get(0);
     }
-
 }

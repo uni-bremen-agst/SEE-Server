@@ -158,11 +158,12 @@ public class ServerController {
      * @return
      */
     @PostMapping(path = "/updateProjectFile", consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-    @RequireAdminOrUserAndOwnerOfServer
+    //@RequireAdminOrUserAndOwnerOfServer
     public ResponseEntity<?> updateFile(
             @RequestParam(ID_PARAMETER_NAME) UUID serverId,
             @RequestParam("projectType") String projectType,
             @RequestParam("filePath") String filePath,
+            @RequestParam("kind") FileUpdateKind kind,
             HttpServletRequest httpServletRequest) {
         Server server = serverService.get(serverId);
         if (server == null) {
@@ -175,7 +176,47 @@ public class ServerController {
         } catch (IOException e) {
             return ResponseEntity.internalServerError().body(ControllerUtils.wrapMessage("Error during file update! Can't extract file from request."));
         }
-        return ResponseEntity.ok().build();
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping(path = "/renameProjectFile")
+    public ResponseEntity<?> renameFile(
+            @RequestParam(ID_PARAMETER_NAME) UUID serverId,
+            @RequestParam("projectType") String projectType,
+            @RequestParam("oldFilePath") String filePath,
+            @RequestParam("newFilePath") String newFilePath) {
+        Server server = serverService.get(serverId);
+        if (server == null) {
+            return ResponseEntity.notFound().build();
+        }
+        try {
+            serverService.renameProjectFile(server, projectType, filePath, newFilePath);
+        } catch (InterruptedException e) {
+            return ResponseEntity.internalServerError().body(ControllerUtils.wrapMessage("Error during file update!"));
+        } catch (IOException e) {
+            return ResponseEntity.internalServerError().body(ControllerUtils.wrapMessage("Error during file update! Can't extract file from request."));
+        }
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping(path = "/deleteProjectFile")
+    public ResponseEntity<?> deleteFile(
+            @RequestParam(ID_PARAMETER_NAME) UUID serverId,
+            @RequestParam("projectType") String projectType,
+            @RequestParam("filePath") String newFilePath
+    ) {
+        Server server = serverService.get(serverId);
+        if (server == null) {
+            return ResponseEntity.notFound().build();
+        }
+        try {
+            serverService.deleteProjectFile(server, projectType, newFilePath);
+        } catch (InterruptedException e) {
+            return ResponseEntity.internalServerError().body(ControllerUtils.wrapMessage("Error during file update!"));
+        } catch (IOException e) {
+            return ResponseEntity.internalServerError().body(ControllerUtils.wrapMessage("Error during file update! Can't extract file from request."));
+        }
+        return ResponseEntity.noContent().build();
     }
 
     /**
