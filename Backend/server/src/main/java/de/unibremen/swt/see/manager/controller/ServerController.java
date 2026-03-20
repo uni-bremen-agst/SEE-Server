@@ -163,7 +163,6 @@ public class ServerController {
             @RequestParam(ID_PARAMETER_NAME) UUID serverId,
             @RequestParam("projectType") String projectType,
             @RequestParam("filePath") String filePath,
-            @RequestParam("kind") FileUpdateKind kind,
             HttpServletRequest httpServletRequest) {
         Server server = serverService.get(serverId);
         if (server == null) {
