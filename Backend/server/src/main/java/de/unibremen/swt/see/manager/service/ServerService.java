@@ -290,6 +290,17 @@ public class ServerService {
         });
     }
 
+    /**
+     * Renames a file of a specific project of a server.
+     * <p>
+     * The file at {@code filePath} must exist and {@code newFilePath} must belong to the same project.
+     * @param server The server the file belongs to.
+     * @param projectType The project type of the file.
+     * @param filePath The old file path of the file relative to the project.
+     * @param newFilePath The new file path of the file relative to the project.
+     * @throws InterruptedException Will be thrown if the thread is interrupted.
+     * @throws IOException Will be thrown if the file cannot be renamed.
+     */
     public void renameProjectFile(Server server, String projectType, String filePath, String newFilePath) throws InterruptedException, IOException {
         Path p = Paths.get(projectType).resolve(filePath);
 
@@ -317,7 +328,7 @@ public class ServerService {
     }
 
     private void sendFileRenameToClientViaLivekkit(Server server, String projectTypeStr, String oldFileName, String newFileName) throws IOException {
-        FileRename rename = new FileRename(oldFileName, newFileName, projectTypeStr);
+        FileRename rename = new FileRename(oldFileName, projectTypeStr, newFileName);
         encodeMessageAndSend(rename, server.getName(), LIVEKIT_FILE_RENAME_TOPIC_NAME);
     }
 

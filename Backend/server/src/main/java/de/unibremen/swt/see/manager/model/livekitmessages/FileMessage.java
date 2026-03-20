@@ -3,6 +3,9 @@ package de.unibremen.swt.see.manager.model.livekitmessages;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
+/**
+ * Base class for file messages.
+ */
 @Data
 @AllArgsConstructor
 public class FileMessage {
@@ -17,7 +20,10 @@ public class FileMessage {
      */
     private String projectType;
 
-
+    /**
+     * Default constructor.
+     */
     public FileMessage() {
+        // Intentionally empty.
     }
 }
