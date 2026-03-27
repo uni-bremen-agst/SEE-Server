@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 
 /**
- * Base class for file messages.
+ * Base class for file update messages.
  */
 @Data
 @AllArgsConstructor

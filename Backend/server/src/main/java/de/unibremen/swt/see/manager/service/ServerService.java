@@ -156,11 +156,20 @@ public class ServerService {
      */
     private final static int PASSWORD_LENGTH = 24;
 
+    /**
+     * Livekit topic name for file updates.
+     */
     private final static String LIVEKIT_FILE_SYNC_TOPIC_NAME = "file-update";
 
+    /**
+     * Livekit topic name for file renames.
+     */
     private final static String LIVEKIT_FILE_RENAME_TOPIC_NAME = "file-rename";
 
-    private final static String LIVEKIT_FILE_DELETE_TOPIC_NAME = "file-rename";
+    /**
+     * Livekit topic name for file deletions.
+     */
+    private final static String LIVEKIT_FILE_DELETE_TOPIC_NAME = "file-delete";
 
     /**
      * Retrieves a server by its ID.
@@ -263,8 +272,9 @@ public class ServerService {
 
     /**
      * Updates a file of a specific project of a server.
-     * <p></p>
+     * <p>
      * The update will also be propagated to all other active clients on that server.
+     * This action will be performed atomic
      *
      * @param server the server the file belongs to.
      * @param projectTypeStr the project type of the file.
@@ -294,6 +304,8 @@ public class ServerService {
      * Renames a file of a specific project of a server.
      * <p>
      * The file at {@code filePath} must exist and {@code newFilePath} must belong to the same project.
+     * This action will be performed atomic
+     *
      * @param server The server the file belongs to.
      * @param projectType The project type of the file.
      * @param filePath The old file path of the file relative to the project.
@@ -312,6 +324,17 @@ public class ServerService {
         });
     }
 
+    /**
+     * Deletes a given file of a given server in a project.
+     * <p>
+     * This action will be performed atomic
+     *
+     * @param server The server te file belongs to.
+     * @param projectType The project type of the file.
+     * @param filePath The file path of the file relative to the project.
+     * @throws InterruptedException Will be thrown if the thread is interrupted.
+     * @throws IOException Will be thrown if the file cannot be deleted.
+     */
     public void deleteProjectFile(Server server, String projectType, String filePath) throws InterruptedException, IOException {
         Path p = Paths.get(projectType).resolve(filePath);
         lockRegistry.executeLocked(p, () -> {
@@ -322,26 +345,44 @@ public class ServerService {
         });
     }
 
-    private void sendFileDeleteToClientViaLivekkit(Server server, String projectTypeStr, String fileName) throws IOException {
-        FileMessage delete = new FileMessage(fileName, projectTypeStr);
+    /**
+     * Sends the file delete operation to all clients connected to the server via Livekit.
+     *
+     * @param server The server the file belongs to.
+     * @param projectType The project type of the file.
+     * @param fileName The path of the file relative to the project.
+     * @throws IOException Will be thrown if the Livektit message can't be sent.
+     */
+    private void sendFileDeleteToClientViaLivekkit(Server server, String projectType, String fileName) throws IOException {
+        FileMessage delete = new FileMessage(fileName, projectType);
         encodeMessageAndSend(delete, server.getName(), LIVEKIT_FILE_DELETE_TOPIC_NAME);
     }
 
-    private void sendFileRenameToClientViaLivekkit(Server server, String projectTypeStr, String oldFileName, String newFileName) throws IOException {
-        FileRename rename = new FileRename(oldFileName, projectTypeStr, newFileName);
+    /**
+     * Sends the file rename operation to all clients connected to the server via Livekit.
+     *
+     * @param server The server the file belongs to.
+     * @param projectType The project type of the file.
+     * @param oldFileName The old path of the file relative to the project.
+     * @param newFileName The new path of the file relative to the project.
+     * @throws IOException Will be thrown if the Livektit message can't be sent.
+     */
+    private void sendFileRenameToClientViaLivekkit(Server server, String projectType, String oldFileName, String newFileName) throws IOException {
+        FileRename rename = new FileRename(oldFileName, projectType, newFileName);
         encodeMessageAndSend(rename, server.getName(), LIVEKIT_FILE_RENAME_TOPIC_NAME);
     }
 
     /**
+     * Sends the file update operation to all clients connected to the server via Livekit.
      *
-     * @param server
-     * @param projectTypeStr
-     * @param fileContent
-     * @param fileName
-     * @throws IOException
+     * @param server The server the file belongs to.
+     * @param projectType The project type of the file.
+     * @param fileContent The new content of the file.
+     * @param fileName The path of the file relative to the project.
+     * @throws IOException Will be thrown if the Livektit message can't be sent.
      */
-    private void sendFileUpdateToClientViaLivekit(Server server, String projectTypeStr, String fileContent, String fileName) throws IOException {
-        FileUpdate update = new FileUpdate(fileName, fileContent, projectTypeStr);
+    private void sendFileUpdateToClientViaLivekit(Server server, String projectType, String fileContent, String fileName) throws IOException {
+        FileUpdate update = new FileUpdate(fileName, fileContent, projectType);
         encodeMessageAndSend(update, server.getName(), LIVEKIT_FILE_SYNC_TOPIC_NAME);
     }
 

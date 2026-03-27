@@ -155,7 +155,7 @@ public class ServerController {
      * @param projectType The project type the file belongs to.
      * @param filePath The path of the file, relative to the project directory.
      * @param httpServletRequest The HTTP request containing the file content.
-     * @return
+     * @return {@code 204 NO_CONTENT} when the update was successful. {@code 500 Internal Server Error} when an error occurred in the process.
      */
     @PostMapping(path = "/updateProjectFile", consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     //@RequireAdminOrUserAndOwnerOfServer
@@ -178,6 +178,17 @@ public class ServerController {
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * Renames a file in a project of an existing server.
+     * <p/>
+     * Note that the file will be updated wins "last write wins". If the file is edited my multiple users, the last write to the fill will be kept.
+     *
+     * @param serverId The ID of the server.
+     * @param projectType The project type the file belongs to.
+     * @param filePath The old path of the file, relative to the project directory.
+     * @param newFilePath The new path of the file, relative to the project directory.
+     * @return {@code 204 NO_CONTENT} when the rename  was successful. {@code 500 Internal Server Error} when an error occurred in the process.
+     */
     @PostMapping(path = "/renameProjectFile")
     public ResponseEntity<?> renameFile(
             @RequestParam(ID_PARAMETER_NAME) UUID serverId,
