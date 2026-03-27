@@ -1,11 +1,13 @@
 package de.unibremen.swt.see.manager.model.livekitmessages;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /**
  * Message object for file updates.
  * This will be sent via livekit.
  */
+@EqualsAndHashCode(callSuper = true)
 @Data
 public class FileUpdate extends FileMessage {
 

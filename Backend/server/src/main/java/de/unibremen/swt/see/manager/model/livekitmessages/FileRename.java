@@ -1,10 +1,12 @@
 package de.unibremen.swt.see.manager.model.livekitmessages;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /**
  * Message object for file renames.
  */
+@EqualsAndHashCode(callSuper = true)
 @Data
 public class FileRename extends FileMessage {
 
