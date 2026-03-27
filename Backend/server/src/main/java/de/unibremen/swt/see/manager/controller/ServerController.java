@@ -209,18 +209,26 @@ public class ServerController {
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * Deletes a file in a project of an existing server.
+     *
+     * @param serverId The ID of the server
+     * @param projectType The project type the file belongs to.
+     * @param filePath The path of the file, relative to the project directory.
+     * @return {@code 204 NO_CONTENT} when the file was deleted. {@code 500 Internal Server Error} when an error occurred in the process.
+     */
     @PostMapping(path = "/deleteProjectFile")
     public ResponseEntity<?> deleteFile(
             @RequestParam(ID_PARAMETER_NAME) UUID serverId,
             @RequestParam("projectType") String projectType,
-            @RequestParam("filePath") String newFilePath
+            @RequestParam("filePath") String filePath
     ) {
         Server server = serverService.get(serverId);
         if (server == null) {
             return ResponseEntity.notFound().build();
         }
         try {
-            serverService.deleteProjectFile(server, projectType, newFilePath);
+            serverService.deleteProjectFile(server, projectType, filePath);
         } catch (InterruptedException e) {
             return ResponseEntity.internalServerError().body(ControllerUtils.wrapMessage("Error during file update!"));
         } catch (IOException e) {
