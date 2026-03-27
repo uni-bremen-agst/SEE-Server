@@ -115,14 +115,21 @@ public class FileService {
         return localFilePath;
     }
 
-    private void rebuildZipCacheFile(Server server, String projectType, Path projectPath) throws IOException {
+    /**
+     * Rebuilds the zip cache of a given project.
+     *
+     * @param server The server, the project belong to.
+     * @param projectType The type of the project.
+     * @throws IOException If the zip file can't be built.
+     */
+    private void rebuildZipCacheFile(Server server, String projectType) throws IOException {
 
         Path zipPath = getServerUploadPath(server).resolve(projectType + ".zip");
         Files.delete(zipPath);
 
         // Rebuild Zip file with the updated file
         try (ZipFile zipFile = new ZipFile(zipPath.toFile())) {
-            zipFile.addFolder(projectPath.toFile());
+            zipFile.addFolder(getServerUploadPath(server).resolve(projectType).toFile());
         }
 
         Optional<ProjectFile> file = fileRepo.findByServerIdAndProjectType(server.getId(), ProjectType.valueOf(projectType));
