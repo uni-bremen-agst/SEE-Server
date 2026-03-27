@@ -8,6 +8,7 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.lingala.zip4j.ZipFile;
+import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -145,56 +146,59 @@ public class FileService {
 
     /**
      * Updates the content of a file in a project.
+     * <p>
+     * If the file doesn't exist yet, it will be created.
+     * {@code filePath} must be
      *
      * @param server the server this file belongs to.
-     * @param projectTypeStr the project type of the file.
+     * @param projectType the project type of the file.
      * @param filePath the path of the file, relative to the project directory.
      * @param fileContents the new content of the file.
      * @throws IOException will be thrown, when the file cant be written
-     * @throws IllegalArgumentException will be thrown when the file path is outside the project directory (to prevent path traversals).
+     * @throws IllegalArgumentException will be thrown if the file can't be updated.
      */
-    public void updateFileInProject(Server server, String projectTypeStr, String filePath, String fileContents) throws IOException {
-        Path projectPath = getServerUploadPath(server).resolve(projectTypeStr);
-        Path localFilePath = getFilePathSanitized(projectPath, filePath);
+    public void updateFileInProject(Server server, String projectType, String filePath, String fileContents) throws IOException {
+        Path projectPath = getServerUploadPath(server).resolve(projectType);
+        Path localFilePath = getFilePathSanitized(projectPath, filePath, false);
 
+        FileUtils.touch(localFilePath.toFile());
         Files.writeString(localFilePath, fileContents);
 
-        rebuildZipCacheFile(server, projectTypeStr, projectPath);
-//        Path zipPath = getServerUploadPath(server).resolve(projectTypeStr + ".zip");
-//        Files.delete(zipPath);
-//
-//        // Rebuild Zip file with the updated file
-//        try (ZipFile zipFile = new ZipFile(zipPath.toFile())) {
-//            zipFile.addFolder(projectPath.toFile());
-//        }
-//
-//        Optional<ProjectFile> file = fileRepo.findByServerIdAndProjectType(server.getId(), ProjectType.valueOf(projectTypeStr));
-//
-//        if (file.isPresent()) {
-//            ProjectFile projectFileEntity = file.get();
-//            projectFileEntity.setSize(Files.size(zipPath));
-//            fileRepo.save(projectFileEntity);
-//        } else {
-//            log.warn("ProjectFile not found for server {} and type {}, database record not updated", server.getId(), projectTypeStr);
-//        }
+        rebuildZipCacheFile(server, projectType);
     }
 
+    /**
+     * Renames a file in a project.
+     *
+     * @param server the server this file belongs to.
+     * @param projectType the project type of the file.
+     * @param filePath the old path of the file, relative to the project directory.
+     * @param newFilePath the new path of the file, relative to the project directory.
+     * @throws IOException will be thrown if the file can't be renamed.
+     */
     public void renameFileInProject(Server server, String projectType, String filePath, String newFilePath) throws IOException {
         Path projectPath = getServerUploadPath(server).resolve(projectType);
-        Path localOldFilePath = getFilePathSanitized(projectPath, filePath);
-        //Path localNewFilePath = projectPath.resolve(filePath);
+        Path localOldFilePath = getFilePathSanitized(projectPath, filePath, true);
         Path localNewFilePath = projectPath.resolve(newFilePath);
 
         Files.move(localOldFilePath, localNewFilePath, REPLACE_EXISTING);
-        rebuildZipCacheFile(server, projectType, projectPath);
+        rebuildZipCacheFile(server, projectType);
     }
 
+    /**
+     * Deletes a file in a project.
+     *
+     * @param server the server this file belongs to.
+     * @param projectType the project type of the file.
+     * @param filePath the path of the file.
+     * @throws IOException will be thrown if the file can't be deleted.
+     */
     public void deleteFileInProject(Server server, String projectType, String filePath) throws IOException {
         Path projectPath = getServerUploadPath(server).resolve(projectType);
-        Path localFilePath = getFilePathSanitized(projectPath, filePath);
+        Path localFilePath = getFilePathSanitized(projectPath, filePath, true);
 
         Files.delete(localFilePath);
-        rebuildZipCacheFile(server, projectType, projectPath);
+        rebuildZipCacheFile(server, projectType);
     }
 
     /**
@@ -325,6 +329,7 @@ public class FileService {
             } catch (IOException e) {
                 throw new IOException("Unable to save file: " + projectFile.getName(), e);
             }
+            // Unzip project to handle file updates
             Files.createDirectories(dir);
             ZipFile zipFile = new ZipFile(filePath.toString());
             zipFile.extractAll(dir.toString());
