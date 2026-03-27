@@ -1,26 +1,30 @@
 package de.unibremen.swt.see.manager.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.dockerjava.api.exception.InternalServerErrorException;
 import com.github.dockerjava.api.exception.NotFoundException;
 import com.github.dockerjava.api.exception.NotModifiedException;
+import de.unibremen.swt.see.manager.model.*;
 import de.unibremen.swt.see.manager.model.livekitmessages.FileMessage;
 import de.unibremen.swt.see.manager.model.livekitmessages.FileRename;
 import de.unibremen.swt.see.manager.model.livekitmessages.FileUpdate;
-import de.unibremen.swt.see.manager.model.Config;
-import de.unibremen.swt.see.manager.model.ProjectFile;
-import de.unibremen.swt.see.manager.model.ProjectType;
-import de.unibremen.swt.see.manager.model.RoleType;
-import de.unibremen.swt.see.manager.model.Server;
-import de.unibremen.swt.see.manager.model.ServerStatusType;
-import de.unibremen.swt.see.manager.model.User;
 import de.unibremen.swt.see.manager.repository.ConfigRepository;
 import de.unibremen.swt.see.manager.repository.ServerRepository;
 import de.unibremen.swt.see.manager.util.ServerLockManager;
-import io.livekit.server.*;
+import io.livekit.server.AccessToken;
+import io.livekit.server.RoomJoin;
+import io.livekit.server.RoomName;
+import io.livekit.server.RoomServiceClient;
 import jakarta.annotation.Nullable;
 import jakarta.persistence.EntityNotFoundException;
+import livekit.LivekitModels;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.integration.support.locks.LockRegistry;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -33,15 +37,6 @@ import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
-
-import livekit.LivekitModels;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.integration.support.locks.LockRegistry;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
 /**
  * Service class for managing server-related operations.
