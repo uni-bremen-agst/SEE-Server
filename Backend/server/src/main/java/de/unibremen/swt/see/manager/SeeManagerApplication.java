@@ -35,7 +35,6 @@ import org.springframework.scheduling.annotation.Scheduled;
 @SpringBootApplication
 @RequiredArgsConstructor
 @EnableScheduling
-@EnableAsync
 @Slf4j
 public class SeeManagerApplication {
 
