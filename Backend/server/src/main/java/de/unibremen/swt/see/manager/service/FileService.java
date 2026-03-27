@@ -93,12 +93,23 @@ public class FileService {
         return fileRepo.save(projectFile);
     }
 
-    private Path getFilePathSanitized(Path projectPath, String filePath) throws IOException {
+    /**
+     * Sanitizes the path to a local file in a project and makes sure the file exist when {@code checkExist} is set to true.
+     * <p>
+     * If the file path lead to a location outside the project (e.g. {@code ../../../../../random-system.file}) an @see {@link IOException} is thrown.
+     *
+     * @param projectPath The path of the project directory.
+     * @param filePath The file path, relative to {@code projectPath}.
+     * @param checkExist Set to true, to check if the file exist.
+     * @return The absolute file path.
+     * @throws IOException When the file is outside the project directory or doesn't exist.
+     */
+    private Path getFilePathSanitized(Path projectPath, String filePath, boolean checkExist) throws IOException {
         Path localFilePath = projectPath.resolve(filePath);
         if (!localFilePath.normalize().startsWith(projectPath)) {
             throw new IllegalArgumentException("File path is outside of project directory: " + filePath);
         }
-        if (!Files.exists(localFilePath)) {
+        if (checkExist && !Files.exists(localFilePath)) {
             throw new IOException("File does not exist: " + localFilePath);
         }
         return localFilePath;
