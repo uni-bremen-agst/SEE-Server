@@ -9,11 +9,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.lingala.zip4j.ZipFile;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.filefilter.TrueFileFilter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -68,11 +70,12 @@ public class FileService {
      * @param server the server instance this file belongs to
      * @param projectType the type of the project
      * @param multipartFile the file content from the API request
+     * @param stripSingleRootDir determines if a single root directory is stripped during extraction (if present) to match behavior of client.
      * @return the created file, or {@code null} if the file content is empty.
      * @throws java.io.IOException if there was an I/O error while storing the
      * file
      */
-    public ProjectFile create(Server server, ProjectType projectType, MultipartFile multipartFile) throws IOException {
+    public ProjectFile create(Server server, ProjectType projectType, MultipartFile multipartFile, boolean stripSingleRootDir) throws IOException {
         if (multipartFile.isEmpty()) {
             return null;
         }
@@ -85,7 +88,7 @@ public class FileService {
 
         Path path;
         try {
-            path = storeProjectFile(projectFile, multipartFile, projectType);
+            path = storeProjectFile(projectFile, multipartFile, projectType, stripSingleRootDir);
         } catch (IOException e) {
             throw new IOException("Error persisting file.", e);
         }
@@ -316,11 +319,12 @@ public class FileService {
      *
      * @param projectFile the prepared file metadata
      * @param multipartFile the file content
-     * @param projectType
+     * @param projectType the type of the project
+     * @param stripSingleRootDir determines if a single root directory is stripped during extraction (if present) to match behavior of client.
      * @return the path to where the file was stored
      * @throws IOException if there was an I/O error while storing the file
      */
-    private Path storeProjectFile(ProjectFile projectFile, MultipartFile multipartFile, ProjectType projectType) throws IOException {
+    private Path storeProjectFile(ProjectFile projectFile, MultipartFile multipartFile, ProjectType projectType, boolean stripSingleRootDir) throws IOException {
         Path filePath = getServerUploadPath(projectFile.getServer()).resolve(projectType + ".zip");
         var dir = getServerUploadPath(projectFile.getServer()).resolve(projectType.toString());
         if (filePath.toString().endsWith(".zip")) {
@@ -334,6 +338,18 @@ public class FileService {
             ZipFile zipFile = new ZipFile(filePath.toString());
             zipFile.extractAll(dir.toString());
             zipFile.close();
+
+            var dirs = FileUtils.listFilesAndDirs(dir.toFile(), TrueFileFilter.INSTANCE, null).stream().filter(x -> x.isDirectory() && !x.getAbsolutePath().equals(dir.toString())).toList();
+            boolean doStripSingleRootDir = stripSingleRootDir && FileUtils.listFiles(dir.toFile(), TrueFileFilter.INSTANCE, null).isEmpty() && dirs.size() == 1;
+            if (doStripSingleRootDir) {
+                // When the zip dir only contains a single dir.
+                File tempLocation = Files.createTempDirectory("see").toFile();
+                Files.delete(tempLocation.toPath());
+
+                FileUtils.moveDirectory(dirs.getFirst(), tempLocation);
+                FileUtils.deleteDirectory(dir.toFile());
+                FileUtils.moveDirectory(tempLocation, dir.toFile());
+            }
         }
 
         return filePath;

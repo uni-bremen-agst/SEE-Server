@@ -70,6 +70,11 @@ public class ServerController {
     private static final String ID_PARAMETER_NAME = "id";
 
     /**
+     * Specifies if a single root dir should be removed when extracting a zip archive.
+     */
+    private static final boolean STRIP_SINGLE_ROOT_DIR = true;
+
+    /**
      * Retrieves metadata of the server identified by the specified ID.
      *
      * @param id the ID of the server to retrieve
@@ -139,7 +144,7 @@ public class ServerController {
             @RequestParam(ID_PARAMETER_NAME) UUID serverId,
             @RequestParam("projectType") String projectType,
             @RequestParam("file") MultipartFile file) {
-        ProjectFile responseProjectFile = serverService.addProjectFile(serverId, projectType, file);
+        ProjectFile responseProjectFile = serverService.addProjectFile(serverId, projectType, file, STRIP_SINGLE_ROOT_DIR);
         if (responseProjectFile == null) {
             return ResponseEntity.internalServerError().build();
         }

@@ -243,10 +243,11 @@ public class ServerService {
      * @param serverId the ID identifying the server instance
      * @param projectTypeStr the project type of the file
      * @param multipartFile the file content
+     * @param stripSingleRootDir determines if a single root directory is stripped during extraction (if present) to match behavior of client.
      * @return the created file, or {@code null} if the server was not found or
      * an error occurred while storing the file
      */
-    public ProjectFile addProjectFile(UUID serverId, String projectTypeStr, MultipartFile multipartFile) {
+    public ProjectFile addProjectFile(UUID serverId, String projectTypeStr, MultipartFile multipartFile, boolean stripSingleRootDir) {
         Optional<Server> optServer = serverRepo.findById(serverId);
         if (optServer.isEmpty()) {
             log.error("Server not found with ID: {}", serverId);
@@ -258,7 +259,7 @@ public class ServerService {
         log.info("Adding file {} to server {}", multipartFile.getOriginalFilename(), server.getName());
 
         try {
-            return fileService.create(server, projectType, multipartFile);
+            return fileService.create(server, projectType, multipartFile, stripSingleRootDir);
         } catch (IOException e) {
             log.error("Unable to add file to server {}: ", serverId, e);
         }
