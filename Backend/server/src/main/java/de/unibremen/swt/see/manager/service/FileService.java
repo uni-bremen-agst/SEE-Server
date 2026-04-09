@@ -181,7 +181,7 @@ public class FileService {
     public void renameFileInProject(Server server, String projectType, String filePath, String newFilePath) throws IOException {
         Path projectPath = getServerUploadPath(server).resolve(projectType);
         Path localOldFilePath = getFilePathSanitized(projectPath, filePath, true);
-        Path localNewFilePath = projectPath.resolve(newFilePath);
+        Path localNewFilePath = getFilePathSanitized(projectPath, newFilePath, false);
 
         Files.move(localOldFilePath, localNewFilePath, REPLACE_EXISTING);
         rebuildZipCacheFile(server, projectType);
