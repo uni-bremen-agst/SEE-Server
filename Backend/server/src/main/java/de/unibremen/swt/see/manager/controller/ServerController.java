@@ -245,7 +245,6 @@ public class ServerController {
     }
 
     /**
-     * throw new RuntimeException(e);
      * Deletes the server with the specified ID.
      * <p>
      * Deletes the server along with its files.
