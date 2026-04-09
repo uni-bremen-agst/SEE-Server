@@ -309,7 +309,7 @@ public class FileService {
             delete(projectFile);
         }
 
-        Files.delete(getServerUploadPath(server));
+        FileUtils.deleteDirectory(getServerUploadPath(server).toFile());
     }
 
 
