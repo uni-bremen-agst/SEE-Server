@@ -208,9 +208,9 @@ public class ServerController {
         try {
             serverService.renameProjectFile(server, projectType, filePath, newFilePath);
         } catch (InterruptedException e) {
-            return ResponseEntity.internalServerError().body(ControllerUtils.wrapMessage("Error during file update!"));
+            return ResponseEntity.internalServerError().body(ControllerUtils.wrapMessage("Error during file rename!"));
         } catch (IOException e) {
-            return ResponseEntity.internalServerError().body(ControllerUtils.wrapMessage("Error during file update! Can't extract file from request."));
+            return ResponseEntity.internalServerError().body(ControllerUtils.wrapMessage("Error during file rename! Can't extract file from request."));
         }
         return ResponseEntity.noContent().build();
     }
@@ -236,10 +236,8 @@ public class ServerController {
         }
         try {
             serverService.deleteProjectFile(server, projectType, filePath);
-        } catch (InterruptedException e) {
-            return ResponseEntity.internalServerError().body(ControllerUtils.wrapMessage("Error during file update!"));
-        } catch (IOException e) {
-            return ResponseEntity.internalServerError().body(ControllerUtils.wrapMessage("Error during file update! Can't extract file from request."));
+        } catch (InterruptedException | IOException e) {
+            return ResponseEntity.internalServerError().body(ControllerUtils.wrapMessage("Error during file deletion!"));
         }
         return ResponseEntity.noContent().build();
     }
