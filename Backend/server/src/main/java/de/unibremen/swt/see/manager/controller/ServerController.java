@@ -156,20 +156,20 @@ public class ServerController {
      * <p/>
      * Note that the file will be updated wins "last write wins". If the file is edited my multiple users, the last write to the fill will be kept.
      *
-     * @param serverId The ID of the server.
+     * @param id The ID of the server.
      * @param projectType The project type the file belongs to.
      * @param filePath The path of the file, relative to the project directory.
      * @param httpServletRequest The HTTP request containing the file content.
      * @return {@code 204 NO_CONTENT} when the update was successful. {@code 500 Internal Server Error} when an error occurred in the process.
      */
     @PostMapping(path = "/updateProjectFile", consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-    //@RequireAdminOrUserAndOwnerOfServer
+    @RequireAdminOrUserAndOwnerOfServer
     public ResponseEntity<?> updateFile(
-            @RequestParam(ID_PARAMETER_NAME) UUID serverId,
+            @RequestParam(ID_PARAMETER_NAME) UUID id,
             @RequestParam("projectType") String projectType,
             @RequestParam("filePath") String filePath,
             HttpServletRequest httpServletRequest) {
-        Server server = serverService.get(serverId);
+        Server server = serverService.get(id);
         if (server == null) {
             return ResponseEntity.notFound().build();
         }
@@ -188,19 +188,20 @@ public class ServerController {
      * <p/>
      * Note that the file will be updated wins "last write wins". If the file is edited my multiple users, the last write to the fill will be kept.
      *
-     * @param serverId The ID of the server.
+     * @param id The ID of the server.
      * @param projectType The project type the file belongs to.
      * @param filePath The old path of the file, relative to the project directory.
      * @param newFilePath The new path of the file, relative to the project directory.
      * @return {@code 204 NO_CONTENT} when the rename  was successful. {@code 500 Internal Server Error} when an error occurred in the process.
      */
     @PostMapping(path = "/renameProjectFile")
+    @RequireAdminOrUserAndOwnerOfServer
     public ResponseEntity<?> renameFile(
-            @RequestParam(ID_PARAMETER_NAME) UUID serverId,
+            @RequestParam(ID_PARAMETER_NAME) UUID id,
             @RequestParam("projectType") String projectType,
             @RequestParam("oldFilePath") String filePath,
             @RequestParam("newFilePath") String newFilePath) {
-        Server server = serverService.get(serverId);
+        Server server = serverService.get(id);
         if (server == null) {
             return ResponseEntity.notFound().build();
         }
@@ -217,18 +218,19 @@ public class ServerController {
     /**
      * Deletes a file in a project of an existing server.
      *
-     * @param serverId The ID of the server
+     * @param id The ID of the server
      * @param projectType The project type the file belongs to.
      * @param filePath The path of the file, relative to the project directory.
      * @return {@code 204 NO_CONTENT} when the file was deleted. {@code 500 Internal Server Error} when an error occurred in the process.
      */
     @PostMapping(path = "/deleteProjectFile")
+    @RequireAdminOrUserAndOwnerOfServer
     public ResponseEntity<?> deleteFile(
-            @RequestParam(ID_PARAMETER_NAME) UUID serverId,
+            @RequestParam(ID_PARAMETER_NAME) UUID id,
             @RequestParam("projectType") String projectType,
             @RequestParam("filePath") String filePath
     ) {
-        Server server = serverService.get(serverId);
+        Server server = serverService.get(id);
         if (server == null) {
             return ResponseEntity.notFound().build();
         }
