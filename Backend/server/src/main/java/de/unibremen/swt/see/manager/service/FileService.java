@@ -151,7 +151,6 @@ public class FileService {
      * Updates the content of a file in a project.
      * <p>
      * If the file doesn't exist yet, it will be created.
-     * {@code filePath} must be
      *
      * @param server the server this file belongs to.
      * @param projectType the project type of the file.
