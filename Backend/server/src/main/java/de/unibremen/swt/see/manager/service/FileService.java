@@ -326,7 +326,7 @@ public class FileService {
      */
     private Path storeProjectFile(ProjectFile projectFile, MultipartFile multipartFile, ProjectType projectType, boolean stripSingleRootDir) throws IOException {
         Path filePath = getServerUploadPath(projectFile.getServer()).resolve(projectType + ".zip");
-        var dir = getServerUploadPath(projectFile.getServer()).resolve(projectType.toString());
+        Path dir = getServerUploadPath(projectFile.getServer()).resolve(projectType.toString());
         if (filePath.toString().endsWith(".zip")) {
             try (InputStream inputStream = multipartFile.getInputStream()) {
                 Files.copy(inputStream, filePath);
@@ -339,7 +339,7 @@ public class FileService {
             zipFile.extractAll(dir.toString());
             zipFile.close();
 
-            var dirs = FileUtils.listFilesAndDirs(dir.toFile(), TrueFileFilter.INSTANCE, null).stream().filter(x -> x.isDirectory() && !x.getAbsolutePath().equals(dir.toString())).toList();
+            List<File> dirs = FileUtils.listFilesAndDirs(dir.toFile(), TrueFileFilter.INSTANCE, null).stream().filter(x -> x.isDirectory() && !x.getAbsolutePath().equals(dir.toString())).toList();
             boolean doStripSingleRootDir = stripSingleRootDir && FileUtils.listFiles(dir.toFile(), TrueFileFilter.INSTANCE, null).isEmpty() && dirs.size() == 1;
             if (doStripSingleRootDir) {
                 // When the zip dir only contains a single dir.
