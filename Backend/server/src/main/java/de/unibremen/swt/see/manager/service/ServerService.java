@@ -337,7 +337,7 @@ public class ServerService {
             log.info("Deleting file {} of server {}", filePath, server.getName());
 
             fileService.deleteFileInProject(server, projectType, filePath);
-            sendFileDeleteToClientViaLivekkit(server, projectType, filePath);
+            sendFileDeleteToClientViaLivekit(server, projectType, filePath);
         });
     }
 
@@ -349,7 +349,7 @@ public class ServerService {
      * @param fileName The path of the file relative to the project.
      * @throws IOException Will be thrown if the Livektit message can't be sent.
      */
-    private void sendFileDeleteToClientViaLivekkit(Server server, String projectType, String fileName) throws IOException {
+    private void sendFileDeleteToClientViaLivekit(Server server, String projectType, String fileName) throws IOException {
         FileMessage delete = new FileMessage(fileName, projectType);
         encodeMessageAndSend(delete, server.getName(), LIVEKIT_FILE_DELETE_TOPIC_NAME);
     }
