@@ -281,7 +281,7 @@ public class ServerService {
                                   String projectTypeStr,
                                   String fileName,
                                   InputStream fileIs) throws InterruptedException, IllegalArgumentException, IOException {
-        Path p = Paths.get(projectTypeStr).resolve(fileName);
+        Path p = Paths.get(server.getId().toString()).resolve(projectTypeStr).resolve(fileName);
         lockRegistry.executeLocked(p, () -> {
             log.info("Updating file {} of server {}", fileName, server.getName());
 
@@ -310,7 +310,7 @@ public class ServerService {
      * @throws IOException Will be thrown if the file cannot be renamed.
      */
     public void renameProjectFile(Server server, String projectType, String filePath, String newFilePath) throws InterruptedException, IOException {
-        Path p = Paths.get(projectType).resolve(filePath);
+        Path p = Paths.get(server.getId().toString()).resolve(projectType).resolve(filePath);
 
         lockRegistry.executeLocked(p, () -> {
             log.info("Renaming file {} of server {}", filePath, server.getName());
@@ -332,7 +332,7 @@ public class ServerService {
      * @throws IOException Will be thrown if the file cannot be deleted.
      */
     public void deleteProjectFile(Server server, String projectType, String filePath) throws InterruptedException, IOException {
-        Path p = Paths.get(projectType).resolve(filePath);
+        Path p = Paths.get(server.getId().toString()).resolve(projectType).resolve(filePath);
         lockRegistry.executeLocked(p, () -> {
             log.info("Deleting file {} of server {}", filePath, server.getName());
 
