@@ -316,7 +316,7 @@ public class ServerService {
             log.info("Renaming file {} of server {}", filePath, server.getName());
 
             fileService.renameFileInProject(server, projectType, filePath, newFilePath);
-            sendFileRenameToClientViaLivekkit(server, projectType, filePath, newFilePath);
+            sendFileRenameToClientViaLivekit(server, projectType, filePath, newFilePath);
         });
     }
 
@@ -363,7 +363,7 @@ public class ServerService {
      * @param newFileName The new path of the file relative to the project.
      * @throws IOException Will be thrown if the Livektit message can't be sent.
      */
-    private void sendFileRenameToClientViaLivekkit(Server server, String projectType, String oldFileName, String newFileName) throws IOException {
+    private void sendFileRenameToClientViaLivekit(Server server, String projectType, String oldFileName, String newFileName) throws IOException {
         FileRename rename = new FileRename(oldFileName, projectType, newFileName);
         encodeMessageAndSend(rename, server.getName(), LIVEKIT_FILE_RENAME_TOPIC_NAME);
     }
