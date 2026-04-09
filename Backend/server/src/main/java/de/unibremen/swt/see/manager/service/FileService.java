@@ -129,7 +129,7 @@ public class FileService {
     private void rebuildZipCacheFile(Server server, String projectType) throws IOException {
 
         Path zipPath = getServerUploadPath(server).resolve(projectType + ".zip");
-        Files.delete(zipPath);
+        Files.deleteIfExists(zipPath);
 
         // Rebuild Zip file with the updated file
         try (ZipFile zipFile = new ZipFile(zipPath.toFile())) {
