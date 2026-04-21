@@ -4,7 +4,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowLeft, faDownload, faEye, faPlay, faStop, faClipboard, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { grey } from "@mui/material/colors";
 import Avatar from "../components/Avatar";
-import { use, useEffect, useState } from "react";
+import { use, useCallback, useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 import Server from "../types/Server";
 import { AuthContext } from "../contexts/AuthContext";
@@ -85,7 +85,7 @@ function ServerView() {
     ).finally(() => setIsBusy(false));
   }
 
-  async function refreshData() {
+  const refreshData = useCallback(async () => {
     if (!serverID) return;
     await axiosInstance.get(`/server/`, { params: { id: serverID } }).then(
       (response) => {
@@ -98,7 +98,7 @@ function ServerView() {
     ).catch(
       () => AppUtils.notifyOffline()
     );
-  }
+  }, [axiosInstance, serverID])
 
   useEffect(() => {
     refreshData();
@@ -106,7 +106,7 @@ function ServerView() {
     return () => {
       clearInterval(refreshInterval);
     }
-  }, [location.state]);
+  }, [location.state, refreshData]);
 
   return (
     <Container sx={{ padding: "3em" }}>

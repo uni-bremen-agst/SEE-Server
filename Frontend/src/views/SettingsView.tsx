@@ -3,7 +3,7 @@ import Header from "../components/Header";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowLeft, faCrown, faRepeat, faUserMinus } from "@fortawesome/free-solid-svg-icons";
 import { grey, yellow } from "@mui/material/colors";
-import { use, useEffect, useState } from "react";
+import { use, useCallback, useEffect, useState } from "react";
 import User from "../types/User";
 import { Navigate, useNavigate } from "react-router";
 import { AuthContext } from "../contexts/AuthContext";
@@ -101,7 +101,7 @@ function SettingsView() {
     );
   }
 
-  async function refreshData() {
+  const refreshData = useCallback(async () => {
     await axiosInstance.get("/user/all").then(
       (response) => {
         setUsers(response.data);
@@ -110,7 +110,7 @@ function SettingsView() {
     ).catch(
       () => AppUtils.notifyOffline()
     );
-  }
+  }, [axiosInstance])
 
   useEffect(() => {
     refreshData();
@@ -118,7 +118,7 @@ function SettingsView() {
     return () => {
       clearInterval(refreshInterval);
     }
-  }, [])
+  }, [refreshData])
 
   if (!user?.roles.some((item) => item.name == "ROLE_ADMIN")) {
     return <Navigate to="/" />
