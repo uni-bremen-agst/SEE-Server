@@ -51,11 +51,11 @@ function CreateServerView() {
   const [name, setName] = useState<string>("");
   const [files, setFiles] = useState<SeeFile[]>([]);
 
-  const [avatarSeed, setAvatarSeed] = useState(getRandomSeed());
-  const [avatarColor, setAvatarColor] = useState(getRandomColor());
+  const [avatarSeed, setAvatarSeed] = useState(() => getRandomSeed());
+  const [avatarColor, setAvatarColor] = useState(() => getRandomColor());
   const [displayReloadIcon, setDisplayReloadIcon] = useState(false);
 
-  const [errors, setErrors] = useState(new Map<string, string>());
+  const [errors, setErrors] = useState(() => new Map<string, string>());
 
   type ConditionalProjectType = [ProjectType, boolean];
   const [availableProjectTypes, setAvailableProjectTypes] = useState<ConditionalProjectType[]>(ProjectTypeUtils.getAll().map(projectType => [projectType, true]));

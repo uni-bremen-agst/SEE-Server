@@ -14,11 +14,11 @@ function UserSettingsView() {
 
   const [newUsername, setNewUsername] = useState("");
   const [changeUsernamePassword, setChangeUsernamePassword] = useState("");
-  const [changeUserNameErrors, setChangeUserNameErrors] = useState<Map<string, string>>(new Map<string, string>());
+  const [changeUserNameErrors, setChangeUserNameErrors] = useState<Map<string, string>>(() => new Map<string, string>());
   const [newPassword, setNewPassword] = useState("");
   const [newPasswordRepeat, setNewPasswordRepeat] = useState("");
   const [changePasswordPassword, setChangePasswordPassword] = useState("");
-  const [changePasswordErrors, setChangePasswordErrors] = useState<Map<string, string>>(new Map<string, string>());
+  const [changePasswordErrors, setChangePasswordErrors] = useState<Map<string, string>>(() => new Map<string, string>());
 
   async function updateUsername() {
     if (!newUsername || !changeUsernamePassword) return;
