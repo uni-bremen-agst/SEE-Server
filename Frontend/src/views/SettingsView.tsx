@@ -145,9 +145,9 @@ function SettingsView() {
               variant="standard"
               value={addUserPassword}
               onChange={(e) => setAddUserPassword(e.target.value)}
-              InputProps={{ endAdornment: <IconButton size="small" onClick={() => setAddUserPassword(generateRandomPassword())}><FontAwesomeIcon icon={faRepeat} /></IconButton> }}
+              slotProps={{ input: { endAdornment: <IconButton size="small" onClick={() => setAddUserPassword(generateRandomPassword())}><FontAwesomeIcon icon={faRepeat} /></IconButton> } }}
             />
-            <Stack justifyContent="end" direction="row" spacing={2}>
+            <Stack spacing={2} sx={{ direction: "row", justifyContent: "end" }}>
               <Button variant="contained" color="secondary" sx={{ borderRadius: "25px" }} onClick={() => { setAddUserModalOpen(false); setAddUserUsername(""); setAddUserPassword(""); }}>
                 Cancel
               </Button>
@@ -171,7 +171,7 @@ function SettingsView() {
           <Typography id="remove-user-modal-description" sx={{ marginTop: "2em" }}>
             Are you sure that you want to delete user <b>{selectedUser ? selectedUser.username : ""}</b>?
           </Typography>
-          <Stack justifyContent="end" direction="row" spacing={2} sx={{ marginTop: "2em" }}>
+          <Stack spacing={2} sx={{ marginTop: "2em", direction: "row", justifyContent: "end" }}>
             <Button variant="contained" color="secondary" sx={{ borderRadius: "25px" }} onClick={() => setRemoveUserModalOpen(false)}>
               Cancel
             </Button>
@@ -193,7 +193,7 @@ function SettingsView() {
           <Typography id="promote-demote-modal-description" sx={{ marginTop: "2em" }}>
             Are you sure that you want to {selectedUser?.roles.some((item) => item.name == "ROLE_ADMIN") ? "demote" : "promote"} <b>{selectedUser ? selectedUser.username : ""}</b> to {selectedUser?.roles.some((item) => item.name == "ROLE_ADMIN") ? "user" : "admin"}?
           </Typography>
-          <Stack justifyContent="end" direction="row" spacing={2} sx={{ marginTop: "2em" }}>
+          <Stack spacing={2} sx={{ marginTop: "2em", justifyContent: "end", direction: "row" }}>
             <Button variant="contained" color="secondary" sx={{ borderRadius: "25px" }} onClick={() => setPromoteDemoteUserModalOpen(false)}>
               Cancel
             </Button>
@@ -206,14 +206,14 @@ function SettingsView() {
 
       <Header />
       <Typography variant="h4">
-        <Box display={"inline"} sx={{ "&:hover": { cursor: "pointer" } }}>
+        <Box sx={{ "&:hover": { cursor: "pointer" }, display: "inline" }}>
           <FontAwesomeIcon icon={faArrowLeft} onClick={() => navigate(-1)} />&nbsp;
         </Box>
         Settings
       </Typography>
       <Card sx={{ marginTop: "2em", borderRadius: "25px", overflow: "auto" }}>
         <CardContent>
-          <Stack direction="column" spacing={2} height={"100%"}>
+          <Stack spacing={2} sx={{ height: "100%", direction: "column" }}>
             <Typography variant="h6">User Management</Typography>
             <Card sx={{ borderRadius: "25px", backgroundColor: grey[200], flexGrow: 1, overflow: "auto", minHeight: "100px", maxHeight: "100%" }}>
               <CardContent>
@@ -245,7 +245,7 @@ function SettingsView() {
                 </List>
               </CardContent>
             </Card>
-            <Stack justifyContent="end" direction="row" spacing={2}>
+            <Stack spacing={2} sx={{ justifyContent: "end", direction: "row" }}>
               <Button variant="contained" sx={{ borderRadius: "25px" }} onClick={() => setAddUserModalOpen(true)}>
                 New User
               </Button>

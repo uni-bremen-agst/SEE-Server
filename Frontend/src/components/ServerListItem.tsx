@@ -23,13 +23,19 @@ function ServerListItem(props: { server: Server }) {
   const server = props.server;
 
   return (
-    <Box width={"100%"}>
+    <Box sx={{
+      width: "100%"
+    }}>
       <Card sx={{ cursor: "pointer", borderRadius: "25px" }}>
         <CardActionArea onClick={() => navigate('/server#' + server.id)}>
           <CardContent>
             <Stack direction="row" spacing={2}>
               {/* Avatar */}
-              <Box width={100} height={100}>
+              <Box
+                sx={{
+                  width: 100,
+                  height: 100
+                }}>
                 <Card sx={{ width: "100%", height: "100%" }}>
                   <Avatar width={100} height={100} avatarSeed={server.avatarSeed} avatarColor={server.avatarColor} />
                 </Card>
@@ -71,7 +77,7 @@ function ServerListItem(props: { server: Server }) {
         </CardActionArea>
       </Card>
     </Box>
-  )
+  );
 }
 
 export default ServerListItem;

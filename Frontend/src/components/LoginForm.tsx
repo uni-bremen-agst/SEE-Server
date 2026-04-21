@@ -65,23 +65,27 @@ function LoginForm() {
             label="Username"
             type="text"
             sx={{ width: "100%", marginBottom: "1em" }}
-            InputProps={{ sx: { borderRadius: "15px" } }}
             variant="standard"
             value={username}
             onChange={(e) => { setError(false); setUsername(e.target.value) }}
             onKeyDown={handleUsernameKeyDown}
             autoFocus
+            slotProps={{
+              input: { sx: { borderRadius: "15px" } }
+            }}
           />
           <TextField
             label="Password"
             type="password"
             sx={{ width: "100%", marginBottom: "1em" }}
-            InputProps={{ sx: { borderRadius: "15px" } }}
             variant="standard"
             value={password}
             onChange={(e) => { setError(false); setPassword(e.target.value) }}
             onKeyDown={handlePasswordKeyDown}
             inputRef={passwordInputRef}
+            slotProps={{
+              input: { sx: { borderRadius: "15px" } }
+            }}
           />
           <FormHelperText hidden={!error}>Authentication failed.</FormHelperText>
           <Button
@@ -94,7 +98,7 @@ function LoginForm() {
         </FormControl>
       </CardContent>
     </Card>
-  )
+  );
 }
 
 export default LoginForm;

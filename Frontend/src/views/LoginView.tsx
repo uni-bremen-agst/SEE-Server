@@ -7,11 +7,11 @@ function LoginView() {
       <Container>
         <Grid
           container
-          alignItems="center"
-          justifyContent="center"
-          sx={{ minHeight: '100vh' }}
+          sx={{
+            minHeight: '100vh', justifyContent: "center", alignItems: "center"
+          }}
         >
-          <Grid size={{xs: 4}}>
+          <Grid size={{ xs: 4 }}>
             <LoginForm />
           </Grid>
         </Grid>

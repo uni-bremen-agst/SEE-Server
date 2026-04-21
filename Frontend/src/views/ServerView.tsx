@@ -122,7 +122,7 @@ function ServerView() {
           <Typography id="delete-server-modal-description" sx={{ marginTop: "2em" }}>
             Are you sure you want to delete server <b>{server ? server.name : ""}</b>?
           </Typography>
-          <Stack justifyContent="end" direction="row" spacing={2} sx={{ marginTop: "2em" }}>
+          <Stack spacing={2} sx={{ marginTop: "2em", direction: "row", justifyContent: "end" }}>
             <Button variant="contained" color="secondary" sx={{ borderRadius: "25px" }} onClick={() => setShowDeleteServerModal(false)}>
               Cancel
             </Button>
@@ -134,7 +134,7 @@ function ServerView() {
       </Modal>
       <Header />
       <Typography variant="h4">
-        <Box display={"inline"} sx={{ "&:hover": { cursor: "pointer" } }}>
+        <Box sx={{ "&:hover": { cursor: "pointer" }, display: "inline" }}>
           <FontAwesomeIcon icon={faArrowLeft} onClick={() => navigate(-1)} />&nbsp;
         </Box>
         Server Details
@@ -143,9 +143,9 @@ function ServerView() {
         ? <Typography>Server not found.</Typography>
         : <Card sx={{ marginTop: "2em", borderRadius: "25px", height: "calc(100% - 100px)", overflow: "auto" }}>
           <CardContent sx={{ height: "calc(100% - 3em)" }}>
-            <Stack direction="column" spacing={2} height={"100%"}>
+            <Stack direction="column" spacing={2} sx={{ height: "100%", direction: "column" }}>
               <Stack direction="row" spacing={2}>
-                <Box width={140} height={140}>
+                <Box sx={{ width: 140, height: 140 }}>
                   <Card sx={{ width: "100%", height: "100%" }}>
                     <Avatar width={140} height={140} avatarSeed={server.avatarSeed} avatarColor={server.avatarColor} />
                   </Card>
@@ -247,22 +247,22 @@ function ServerView() {
                           files?.map((projectFile) =>
                             <ListItem sx={{ backgroundColor: "white", borderRadius: "25px", marginBottom: "1em" }} key={projectFile.id}>
                               <Grid container>
-                                <Grid size={{xs: 5}}>
+                                <Grid size={{ xs: 5 }}>
                                   <ListItemText>
                                     <Typography sx={{ fontWeight: "bold", marginLeft: "2pt" }}>{projectFile.name}</Typography>
                                   </ListItemText>
                                 </Grid>
-                                <Grid size={{xs: 4}}>
+                                <Grid size={{ xs: 4 }}>
                                   <ListItemText>
                                     <Typography sx={{ fontStyle: "italic" }}>{ProjectTypeUtils.getLabel(projectFile.projectType)}</Typography>
                                   </ListItemText>
                                 </Grid>
-                                <Grid size={{xs: 2}} sx={{ textAlign: "right" }}>
+                                <Grid size={{ xs: 2 }} sx={{ textAlign: "right" }}>
                                   <ListItemText>
                                     <Typography>{Number(projectFile.size / 1024 / 1024).toFixed(2)} MiB</Typography>
                                   </ListItemText>
                                 </Grid>
-                                <Grid size={{xs: 1}} sx={{ textAlign: "right" }}>
+                                <Grid size={{ xs: 1 }} sx={{ textAlign: "right" }}>
                                   <ListItemText>
                                     <a href={axiosInstance.getUri() + "file/download?id=" + projectFile.id} download={projectFile.name} rel="noopener noreferrer" target="_blank" style={{ textDecoration: 'none' }}>
                                       <IconButton

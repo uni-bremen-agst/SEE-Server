@@ -57,7 +57,7 @@ function UserSettingsView() {
     <Container sx={{ padding: "3em", height: "100vh" }}>
       <Header />
       <Typography variant="h4">
-        <Box display={"inline"} sx={{ "&:hover": { cursor: "pointer" } }}>
+        <Box sx={{ "&:hover": { cursor: "pointer" }, display: "inline" }}>
           <FontAwesomeIcon icon={faArrowLeft} onClick={() => navigate(-1)} />&nbsp;
         </Box>
         User Settings
@@ -80,7 +80,7 @@ function UserSettingsView() {
               value={changeUsernamePassword}
               onChange={(e) => setChangeUsernamePassword(e.target.value)}
             />
-            <Stack justifyContent="end" direction="row" spacing={2}>
+            <Stack spacing={2} sx={{ justifyContent: "end", direction: "row" }}>
               <Button variant="contained" sx={{ borderRadius: "25px" }} onClick={() => updateUsername()}>
                 Save
               </Button>
@@ -118,7 +118,7 @@ function UserSettingsView() {
               helperText={changePasswordErrors.get("newPasswordRepeat")}
               onChange={(e) => setNewPasswordRepeat(e.target.value)}
             />
-            <Stack justifyContent="end" direction="row" spacing={2}>
+            <Stack spacing={2} sx={{ justifyContent: "end", direction: "row" }}>
               <Button variant="contained" sx={{ borderRadius: "25px" }} onClick={() => updatePassword()}>
                 Save
               </Button>
@@ -126,7 +126,7 @@ function UserSettingsView() {
           </Stack>
         </CardContent>
       </Card>
-    </Container>
+    </Container >
   )
 }
 

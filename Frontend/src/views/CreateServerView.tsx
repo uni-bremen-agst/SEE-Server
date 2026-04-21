@@ -118,17 +118,16 @@ function CreateServerView() {
               </Button>
             )}
           </Stack>
-          <Stack justifyContent="end" direction="row" spacing={2} sx={{ marginTop: "2em" }}>
+          <Stack direction="row" spacing={2} sx={{ marginTop: "2em", justifyContent: "end" }}>
             <Button variant="contained" color="secondary" sx={{ borderRadius: "25px" }} onClick={() => setFileTypeModalOpen(false)}>
               Cancel
             </Button>
           </Stack>
         </Box>
       </Modal>
-
       <Header />
       <Typography variant="h4">
-        <Box display={"inline"} sx={{ "&:hover": { cursor: "pointer" } }}>
+        <Box sx={{ "&:hover": { cursor: "pointer" }, display: "inline" }}>
           <FontAwesomeIcon icon={faArrowLeft} onClick={() => navigate(-1)} />&nbsp;
         </Box>
         New Game Server
@@ -137,8 +136,8 @@ function CreateServerView() {
         <CardContent sx={{ height: "calc(100% - 3em)" }}>
           <Stack direction="column" spacing={2}>
             <Stack direction="row" spacing={2}>
-              <Stack direction="column" spacing={2} width={"100%"}>
-                <Stack direction="column" flexGrow={1}>
+              <Stack direction="column" spacing={2} sx={{ width: "100%" }}>
+                <Stack direction="column" sx={{ flexGrow: 1 }} >
                   <Typography variant="h6">Details</Typography>
                   <TextField error={!!errors.get("name")} helperText={errors.get("name")} value={name} onChange={(e) => setName(e.target.value)} label="Server Name" variant="standard" autoFocus />
                 </Stack>
@@ -155,8 +154,10 @@ function CreateServerView() {
                           fullWidth
                           value={projectFile._localfile}
                           onChange={(value) => { setFiles((files) => files.map((item, itemIdx) => itemIdx === idx ? { ...item, _localfile: value } as SeeFile : item)) }}
-                          clearIconButtonProps={{ title: "Remove", children: <FontAwesomeIcon icon={faX} /> }}
-                          inputProps={{ accept: ProjectTypeUtils.getFileExtension(projectFile.projectType) }} />
+                          slotProps={{
+                            htmlInput: { accept: ProjectTypeUtils.getFileExtension(projectFile.projectType) }
+                          }}
+                          clearIconButtonProps={{ title: "Remove", children: <FontAwesomeIcon icon={faX} /> }} />
                         <IconButton
                           size="small"
                           onClick={() => removeFile(idx)}>
@@ -173,18 +174,23 @@ function CreateServerView() {
               </Stack>
 
               {/* Avatar */}
-              <Box width={140} height={140}>
+              <Box sx={{ width: 140, height: 140 }}>
                 <Card sx={{ width: "100%", height: "100%" }}>
                   <CardActionArea onMouseEnter={() => setDisplayReloadIcon(true)} onMouseLeave={() => setDisplayReloadIcon(false)} onClick={() => { setAvatarSeed(getRandomSeed()); setAvatarColor(getRandomColor()); }}>
                     <Box
-                      visibility={displayReloadIcon ? "visible" : "hidden"}
-                      position="absolute" color={grey[500]}
-                      display="flex"
-                      width={140}
-                      height={140}
-                      justifyContent="center"
-                      sx={{ mixBlendMode: "difference" }}>
-                      <Stack direction="column" justifyContent="center">
+                      sx={{
+                        visibility: displayReloadIcon ? "visible" : "hidden",
+                        mixBlendMode: "difference",
+                        width: 140,
+                        height: 140,
+                        display: 'flex',
+                        justifyContent: "center",
+                        color: grey[500],
+                        position: "absolute"
+                      }}>
+                      <Stack direction="column" sx={{
+                        justifyContent: "center"
+                      }}>
                         <FontAwesomeIcon icon={faRepeat} size="4x" />
                       </Stack>
                     </Box>
@@ -194,7 +200,9 @@ function CreateServerView() {
               </Box>
             </Stack>
 
-            <Stack justifyContent="end" direction="row" spacing={2}>
+            <Stack direction="row" spacing={2} sx={{
+              justifyContent: "end"
+            }}>
               <Button variant="contained" color="secondary" sx={{ borderRadius: "25px" }} onClick={() => navigate('/')}>
                 Cancel
               </Button>
@@ -220,7 +228,7 @@ function CreateServerView() {
         </CardContent>
       </Card>
     </Container>
-  )
+  );
 }
 
 export default CreateServerView;
