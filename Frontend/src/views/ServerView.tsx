@@ -4,7 +4,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowLeft, faDownload, faEye, faPlay, faStop, faClipboard, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { grey } from "@mui/material/colors";
 import Avatar from "../components/Avatar";
-import { useContext, useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 import Server from "../types/Server";
 import { AuthContext } from "../contexts/AuthContext";
@@ -39,7 +39,7 @@ const modalStyle = {
 };
 
 function ServerView() {
-  const { axiosInstance } = useContext(AuthContext);
+  const { axiosInstance } = use(AuthContext);
 
   const location = useLocation();
   const navigate = useNavigate();

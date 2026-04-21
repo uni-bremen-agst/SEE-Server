@@ -3,7 +3,7 @@ import Header from "../components/Header";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowLeft, faCrown, faRepeat, faUserMinus } from "@fortawesome/free-solid-svg-icons";
 import { grey, yellow } from "@mui/material/colors";
-import { useContext, useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import User from "../types/User";
 import { Navigate, useNavigate } from "react-router";
 import { AuthContext } from "../contexts/AuthContext";
@@ -31,7 +31,7 @@ function generateRandomPassword() {
 }
 
 function SettingsView() {
-  const { user, axiosInstance } = useContext(AuthContext);
+  const { user, axiosInstance } = use(AuthContext);
 
   const navigate = useNavigate();
 

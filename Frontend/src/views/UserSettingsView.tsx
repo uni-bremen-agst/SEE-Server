@@ -3,13 +3,13 @@ import Header from "../components/Header";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowLeft } from "@fortawesome/free-solid-svg-icons";
 import { useNavigate } from "react-router";
-import { useContext, useState } from "react";
+import { use, useState } from "react";
 import { AuthContext } from "../contexts/AuthContext";
 import { enqueueSnackbar } from "notistack";
 import AppUtils from "../utils/AppUtils";
 
 function UserSettingsView() {
-  const { axiosInstance, user, setUser } = useContext(AuthContext);
+  const { axiosInstance, user, setUser } = use(AuthContext);
   const navigate = useNavigate();
 
   const [newUsername, setNewUsername] = useState("");

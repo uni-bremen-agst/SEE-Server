@@ -6,11 +6,11 @@ import CreateServerView from './views/CreateServerView'
 import SettingsView from './views/SettingsView'
 import UserSettingsView from './views/UserSettingsView'
 import { BrowserRouter } from 'react-router-dom'
-import { useContext } from 'react'
+import { use } from 'react'
 import { AuthContext } from './contexts/AuthContext'
 
 function Router() {
-  const { user } = useContext(AuthContext);
+  const { user } = use(AuthContext);
 
   return (
     <BrowserRouter>

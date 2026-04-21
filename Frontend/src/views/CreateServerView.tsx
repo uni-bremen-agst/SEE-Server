@@ -5,7 +5,7 @@ import { useNavigate } from "react-router";
 import Avatar from "../components/Avatar";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowLeft, faRemove, faRepeat, faX } from "@fortawesome/free-solid-svg-icons";
-import { useContext, useState } from "react";
+import { use, useState } from "react";
 import { MuiFileInput } from 'mui-file-input';
 import { AuthContext } from "../contexts/AuthContext";
 import ProjectType, { ProjectTypeUtils } from "../types/ProjectType";
@@ -42,7 +42,7 @@ function getRandomSeed() {
 }
 
 function CreateServerView() {
-  const { axiosInstance } = useContext(AuthContext);
+  const { axiosInstance } = use(AuthContext);
 
   const navigate = useNavigate();
 

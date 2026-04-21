@@ -3,12 +3,12 @@ import seeLogo from "../img/see-logo.png";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCog, faRightFromBracket, faUser } from '@fortawesome/free-solid-svg-icons'
 import { useNavigate } from "react-router";
-import { useContext } from "react";
+import { use } from "react";
 import { AuthContext } from "../contexts/AuthContext";
 import AppUtils from "../utils/AppUtils";
 
 function Header() {
-  const { axiosInstance, user, setUser } = useContext(AuthContext);
+  const { axiosInstance, user, setUser } = use(AuthContext);
 
   async function logout() {
     await axiosInstance.post("/user/signout").then(
