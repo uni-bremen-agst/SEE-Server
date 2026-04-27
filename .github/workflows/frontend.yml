@@ -1,0 +1,49 @@
+name: Test and build SEE-Server frontend
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review, closed]
+    branches: [master]
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v6
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v6
+        with:
+          version: 10
+
+      - name: Install dependencies
+        working-directory: ./Frontend
+        run: pnpm install
+
+      - name: Build project
+        working-directory: ./Frontend
+        run: pnpm build
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v6
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v6
+        with:
+          version: 10
+
+      - name: Install dependencies
+        working-directory: ./Frontend
+        run: pnpm install
+
+      - name: Lint project
+        working-directory: ./Frontend
+        run: pnpm lint
