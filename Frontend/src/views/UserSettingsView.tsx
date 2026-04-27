@@ -80,7 +80,7 @@ function UserSettingsView() {
               value={changeUsernamePassword}
               onChange={(e) => setChangeUsernamePassword(e.target.value)}
             />
-            <Stack spacing={2} sx={{ justifyContent: "end", direction: "row" }}>
+            <Stack spacing={2} direction="row" sx={{ justifyContent: "end" }}>
               <Button variant="contained" sx={{ borderRadius: "25px" }} onClick={() => updateUsername()}>
                 Save
               </Button>
@@ -118,7 +118,7 @@ function UserSettingsView() {
               helperText={changePasswordErrors.get("newPasswordRepeat")}
               onChange={(e) => setNewPasswordRepeat(e.target.value)}
             />
-            <Stack spacing={2} sx={{ justifyContent: "end", direction: "row" }}>
+            <Stack spacing={2} direction="row" sx={{ justifyContent: "end", }}>
               <Button variant="contained" sx={{ borderRadius: "25px" }} onClick={() => updatePassword()}>
                 Save
               </Button>
