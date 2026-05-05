@@ -334,9 +334,9 @@ public class FileService {
             }
             // Unzip project to handle file updates
             Files.createDirectories(dir);
-            ZipFile zipFile = new ZipFile(filePath.toString());
-            zipFile.extractAll(dir.toString());
-            zipFile.close();
+            try (ZipFile zipFile = new ZipFile(filePath.toString())) {
+                zipFile.extractAll(dir.toString());
+            }
 
             List<File> dirs = FileUtils.listFilesAndDirs(dir.toFile(), TrueFileFilter.INSTANCE, null).stream().filter(x -> x.isDirectory() && !x.getAbsolutePath().equals(dir.toString())).toList();
             boolean doStripSingleRootDir = stripSingleRootDir && FileUtils.listFiles(dir.toFile(), TrueFileFilter.INSTANCE, null).isEmpty() && dirs.size() == 1;
