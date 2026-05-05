@@ -98,6 +98,11 @@ public class ServerService {
     private String externalDockerHost;
 
     /**
+     * Livekit room instance to send file updates.
+     */
+    private RoomServiceClient roomServiceClient;
+
+    /**
      * API URL for the LiveKit instance.
      */
     @Value("${see.app.livekit.url}")
@@ -391,12 +396,10 @@ public class ServerService {
      * @throws IOException If there is an error while encoding or sending the message.
      */
     private void encodeMessageAndSend(Object obj, String serverName, String topic) throws IOException {
-        RoomServiceClient client = RoomServiceClient.createClient(liveKitApiUrl, liveKitApiKey, liveKitApiSecret);
-
         ObjectMapper objectMapper = new ObjectMapper();
         byte[] jsonData = objectMapper.writeValueAsBytes(obj);
 
-        client.sendData(serverName, jsonData, LivekitModels.DataPacket.Kind.RELIABLE, Collections.emptyList(), Collections.emptyList(), topic).execute();
+        roomServiceClient.sendData(serverName, jsonData, LivekitModels.DataPacket.Kind.RELIABLE, Collections.emptyList(), Collections.emptyList(), topic).execute();
     }
 
 
