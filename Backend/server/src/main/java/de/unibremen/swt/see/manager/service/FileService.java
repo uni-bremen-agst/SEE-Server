@@ -106,7 +106,8 @@ public class FileService {
      * @param filePath The file path, relative to {@code projectPath}.
      * @param checkExist Set to true, to check if the file exist.
      * @return The absolute file path.
-     * @throws IOException When the file is outside the project directory or doesn't exist.
+     * @throws IllegalArgumentException When the file is outside the project directory or doesn't exist.
+     * @throws IOException When the file doesn't exist.
      */
     private Path getFilePathSanitized(Path projectPath, String filePath, boolean checkExist) throws IOException {
         Path localFilePath = projectPath.resolve(filePath);
