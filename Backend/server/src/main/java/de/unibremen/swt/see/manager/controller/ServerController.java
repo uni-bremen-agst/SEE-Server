@@ -178,7 +178,7 @@ public class ServerController {
         } catch (InterruptedException | IllegalArgumentException e) {
             return ResponseEntity.internalServerError().body(ControllerUtils.wrapMessage("Error during file update!"));
         } catch (IOException e) {
-            return ResponseEntity.internalServerError().body(ControllerUtils.wrapMessage("Error during file update! Can't extract file from request."));
+            return ResponseEntity.badRequest().body(ControllerUtils.wrapMessage("Error during file update! Can't extract file from request."));
         }
         return ResponseEntity.noContent().build();
     }
