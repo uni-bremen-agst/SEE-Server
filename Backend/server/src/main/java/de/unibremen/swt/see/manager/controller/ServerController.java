@@ -210,7 +210,7 @@ public class ServerController {
         } catch (InterruptedException e) {
             return ResponseEntity.internalServerError().body(ControllerUtils.wrapMessage("Error during file rename!"));
         } catch (IOException e) {
-            return ResponseEntity.internalServerError().body(ControllerUtils.wrapMessage("Error during file rename! Can't extract file from request."));
+            return ResponseEntity.internalServerError().body(ControllerUtils.wrapMessage("Error during file rename! Could not move or validate file path."));
         }
         return ResponseEntity.noContent().build();
     }
