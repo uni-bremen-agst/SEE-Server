@@ -100,7 +100,7 @@ public class ServerService {
     /**
      * Livekit room instance to send file updates.
      */
-    private RoomServiceClient roomServiceClient;
+    private final RoomServiceClient roomServiceClient;
 
     /**
      * API URL for the LiveKit instance.

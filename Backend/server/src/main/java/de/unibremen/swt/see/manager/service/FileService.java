@@ -162,7 +162,10 @@ public class FileService {
     public void updateFileInProject(Server server, String projectType, String filePath, String fileContents) throws IOException {
         Path projectPath = getServerUploadPath(server).resolve(projectType);
         Path localFilePath = getFilePathSanitized(projectPath, filePath, false);
-
+        Path parentPath = localFilePath.getParent();
+        if (parentPath != null) {
+            Files.createDirectories(parentPath);
+        }
         FileUtils.touch(localFilePath.toFile());
         Files.writeString(localFilePath, fileContents);
 

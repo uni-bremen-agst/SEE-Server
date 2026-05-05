@@ -49,6 +49,7 @@ public class BeansConfig {
      * @return A singleton instance of {@see RoomServiceClient}
      */
     @Bean
+    @Scope(value = ConfigurableBeanFactory.SCOPE_SINGLETON)
     public RoomServiceClient roomServiceClient() {
         return RoomServiceClient.createClient(liveKitApiUrl, liveKitApiKey, liveKitApiSecret);
     }
