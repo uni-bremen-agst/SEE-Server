@@ -128,7 +128,6 @@ public class FileService {
      * @throws IOException If the zip file can't be built.
      */
     private void rebuildZipCacheFile(Server server, String projectType) throws IOException {
-
         Path zipPath = getServerUploadPath(server).resolve(projectType + ".zip");
         Files.deleteIfExists(zipPath);
 
