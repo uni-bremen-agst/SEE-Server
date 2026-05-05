@@ -154,7 +154,7 @@ public class ServerController {
     /**
      * Updates a file in a project of an existing server.
      * <p/>
-     * Note that the file will be updated with "last write wins". If the file is edited my multiple users, the last write to the fill will be kept.
+     * Note that file updates follow a "last write wins" policy. If the file is edited by multiple users, the last write to the file will be kept.
      *
      * @param id The ID of the server.
      * @param projectType The project type the file belongs to.
