@@ -186,6 +186,10 @@ public class FileService {
         Path localOldFilePath = getFilePathSanitized(projectPath, filePath, true);
         Path localNewFilePath = getFilePathSanitized(projectPath, newFilePath, false);
 
+        Path localNewFileParentPath = localNewFilePath.getParent();
+        if (localNewFileParentPath != null) {
+            Files.createDirectories(localNewFileParentPath);
+        }
         Files.move(localOldFilePath, localNewFilePath, REPLACE_EXISTING);
         rebuildZipCacheFile(server, projectType);
     }
