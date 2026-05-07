@@ -20,7 +20,7 @@ updates:
     labels:
       - "dependencies"
     reviewers:
-    - "hlkuss"
+      - "hlkuss"
 
   - package-ecosystem: "npm"
     directories:
@@ -30,7 +30,7 @@ updates:
     labels:
       - "dependencies"
     reviewers:
-    - "hlkuss"
+      - "hlkuss"
     
   - package-ecosystem: "github-actions"
     directory: "/"
