@@ -2,10 +2,16 @@ import { defineConfig } from "eslint/config";
 import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import eslintReact from "@eslint-react/eslint-plugin";
+import globals from 'globals';
 
 export default defineConfig(
   {
     files: ["**/*.{js,mjs,cjs,ts,jsx,tsx}"],
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+      },
+    },
     extends: [
       js.configs.recommended,
       tseslint.configs.recommended,
