@@ -59,7 +59,7 @@ public class WebConfig {
     /**
      * Configures custom message converters.
      *
-     * @return the client builder with custom converters.
+     * @return the message converter with custom converters.
      */
     @Bean
     public ClientHttpMessageConvertersCustomizer convertersCustomizer() {
