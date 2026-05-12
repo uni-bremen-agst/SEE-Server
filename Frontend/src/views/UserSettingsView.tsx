@@ -3,22 +3,22 @@ import Header from "../components/Header";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowLeft } from "@fortawesome/free-solid-svg-icons";
 import { useNavigate } from "react-router";
-import { useContext, useState } from "react";
+import { use, useState } from "react";
 import { AuthContext } from "../contexts/AuthContext";
 import { enqueueSnackbar } from "notistack";
 import AppUtils from "../utils/AppUtils";
 
 function UserSettingsView() {
-  const { axiosInstance, user, setUser } = useContext(AuthContext);
+  const { axiosInstance, user, setUser } = use(AuthContext);
   const navigate = useNavigate();
 
   const [newUsername, setNewUsername] = useState("");
   const [changeUsernamePassword, setChangeUsernamePassword] = useState("");
-  const [changeUserNameErrors, setChangeUserNameErrors] = useState<Map<string, string>>(new Map<string, string>());
+  const [changeUserNameErrors, setChangeUserNameErrors] = useState<Map<string, string>>(() => new Map<string, string>());
   const [newPassword, setNewPassword] = useState("");
   const [newPasswordRepeat, setNewPasswordRepeat] = useState("");
   const [changePasswordPassword, setChangePasswordPassword] = useState("");
-  const [changePasswordErrors, setChangePasswordErrors] = useState<Map<string, string>>(new Map<string, string>());
+  const [changePasswordErrors, setChangePasswordErrors] = useState<Map<string, string>>(() => new Map<string, string>());
 
   async function updateUsername() {
     if (!newUsername || !changeUsernamePassword) return;
@@ -57,7 +57,7 @@ function UserSettingsView() {
     <Container sx={{ padding: "3em", height: "100vh" }}>
       <Header />
       <Typography variant="h4">
-        <Box display={"inline"} sx={{ "&:hover": { cursor: "pointer" } }}>
+        <Box sx={{ "&:hover": { cursor: "pointer" }, display: "inline" }}>
           <FontAwesomeIcon icon={faArrowLeft} onClick={() => navigate(-1)} />&nbsp;
         </Box>
         User Settings
@@ -80,7 +80,7 @@ function UserSettingsView() {
               value={changeUsernamePassword}
               onChange={(e) => setChangeUsernamePassword(e.target.value)}
             />
-            <Stack justifyContent="end" direction="row" spacing={2}>
+            <Stack spacing={2} direction="row" sx={{ justifyContent: "end" }}>
               <Button variant="contained" sx={{ borderRadius: "25px" }} onClick={() => updateUsername()}>
                 Save
               </Button>
@@ -118,7 +118,7 @@ function UserSettingsView() {
               helperText={changePasswordErrors.get("newPasswordRepeat")}
               onChange={(e) => setNewPasswordRepeat(e.target.value)}
             />
-            <Stack justifyContent="end" direction="row" spacing={2}>
+            <Stack spacing={2} direction="row" sx={{ justifyContent: "end", }}>
               <Button variant="contained" sx={{ borderRadius: "25px" }} onClick={() => updatePassword()}>
                 Save
               </Button>
@@ -126,7 +126,7 @@ function UserSettingsView() {
           </Stack>
         </CardContent>
       </Card>
-    </Container>
+    </Container >
   )
 }
 

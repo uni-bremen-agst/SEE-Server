@@ -3,7 +3,7 @@ import Header from "../components/Header";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowLeft, faCrown, faRepeat, faUserMinus } from "@fortawesome/free-solid-svg-icons";
 import { grey, yellow } from "@mui/material/colors";
-import { useContext, useEffect, useState } from "react";
+import { use, useCallback, useEffect, useState } from "react";
 import User from "../types/User";
 import { Navigate, useNavigate } from "react-router";
 import { AuthContext } from "../contexts/AuthContext";
@@ -31,7 +31,7 @@ function generateRandomPassword() {
 }
 
 function SettingsView() {
-  const { user, axiosInstance } = useContext(AuthContext);
+  const { user, axiosInstance } = use(AuthContext);
 
   const navigate = useNavigate();
 
@@ -101,7 +101,7 @@ function SettingsView() {
     );
   }
 
-  async function refreshData() {
+  const refreshData = useCallback(async () => {
     await axiosInstance.get("/user/all").then(
       (response) => {
         setUsers(response.data);
@@ -110,7 +110,7 @@ function SettingsView() {
     ).catch(
       () => AppUtils.notifyOffline()
     );
-  }
+  }, [axiosInstance])
 
   useEffect(() => {
     refreshData();
@@ -118,7 +118,7 @@ function SettingsView() {
     return () => {
       clearInterval(refreshInterval);
     }
-  }, [])
+  }, [refreshData])
 
   if (!user?.roles.some((item) => item.name == "ROLE_ADMIN")) {
     return <Navigate to="/" />
@@ -145,9 +145,9 @@ function SettingsView() {
               variant="standard"
               value={addUserPassword}
               onChange={(e) => setAddUserPassword(e.target.value)}
-              InputProps={{ endAdornment: <IconButton size="small" onClick={() => setAddUserPassword(generateRandomPassword())}><FontAwesomeIcon icon={faRepeat} /></IconButton> }}
+              slotProps={{ input: { endAdornment: <IconButton size="small" onClick={() => setAddUserPassword(generateRandomPassword())}><FontAwesomeIcon icon={faRepeat} /></IconButton> } }}
             />
-            <Stack justifyContent="end" direction="row" spacing={2}>
+            <Stack spacing={2} direction="row" sx={{ justifyContent: "end" }}>
               <Button variant="contained" color="secondary" sx={{ borderRadius: "25px" }} onClick={() => { setAddUserModalOpen(false); setAddUserUsername(""); setAddUserPassword(""); }}>
                 Cancel
               </Button>
@@ -171,7 +171,7 @@ function SettingsView() {
           <Typography id="remove-user-modal-description" sx={{ marginTop: "2em" }}>
             Are you sure that you want to delete user <b>{selectedUser ? selectedUser.username : ""}</b>?
           </Typography>
-          <Stack justifyContent="end" direction="row" spacing={2} sx={{ marginTop: "2em" }}>
+          <Stack spacing={2} direction="row" sx={{ marginTop: "2em", justifyContent: "end" }}>
             <Button variant="contained" color="secondary" sx={{ borderRadius: "25px" }} onClick={() => setRemoveUserModalOpen(false)}>
               Cancel
             </Button>
@@ -193,7 +193,7 @@ function SettingsView() {
           <Typography id="promote-demote-modal-description" sx={{ marginTop: "2em" }}>
             Are you sure that you want to {selectedUser?.roles.some((item) => item.name == "ROLE_ADMIN") ? "demote" : "promote"} <b>{selectedUser ? selectedUser.username : ""}</b> to {selectedUser?.roles.some((item) => item.name == "ROLE_ADMIN") ? "user" : "admin"}?
           </Typography>
-          <Stack justifyContent="end" direction="row" spacing={2} sx={{ marginTop: "2em" }}>
+          <Stack spacing={2} direction="row" sx={{ marginTop: "2em", justifyContent: "end" }}>
             <Button variant="contained" color="secondary" sx={{ borderRadius: "25px" }} onClick={() => setPromoteDemoteUserModalOpen(false)}>
               Cancel
             </Button>
@@ -206,14 +206,14 @@ function SettingsView() {
 
       <Header />
       <Typography variant="h4">
-        <Box display={"inline"} sx={{ "&:hover": { cursor: "pointer" } }}>
+        <Box sx={{ "&:hover": { cursor: "pointer" }, display: "inline" }}>
           <FontAwesomeIcon icon={faArrowLeft} onClick={() => navigate(-1)} />&nbsp;
         </Box>
         Settings
       </Typography>
       <Card sx={{ marginTop: "2em", borderRadius: "25px", overflow: "auto" }}>
         <CardContent>
-          <Stack direction="column" spacing={2} height={"100%"}>
+          <Stack spacing={2} direction="column" sx={{ height: "100%" }}>
             <Typography variant="h6">User Management</Typography>
             <Card sx={{ borderRadius: "25px", backgroundColor: grey[200], flexGrow: 1, overflow: "auto", minHeight: "100px", maxHeight: "100%" }}>
               <CardContent>
@@ -245,7 +245,7 @@ function SettingsView() {
                 </List>
               </CardContent>
             </Card>
-            <Stack justifyContent="end" direction="row" spacing={2}>
+            <Stack spacing={2} direction="row" sx={{ justifyContent: "end", }}>
               <Button variant="contained" sx={{ borderRadius: "25px" }} onClick={() => setAddUserModalOpen(true)}>
                 New User
               </Button>
@@ -253,7 +253,7 @@ function SettingsView() {
           </Stack>
         </CardContent>
       </Card>
-    </Container>
+    </Container >
   )
 }
 

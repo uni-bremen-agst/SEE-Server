@@ -18,12 +18,12 @@
         <start-class>${project.groupId}.manager.SeeManagerApplication</start-class>
 
         <!-- Dependency Versions -->
-        <spring-boot-version>3.5.0</spring-boot-version>
+        <spring-boot-version>4.0.5</spring-boot-version>
         <!-- Note: Developers of JJWT advise to wait for 1.0 and skip upgrading to 0.12. -->
-        <jjwt-version>0.12.6</jjwt-version>
+        <jjwt-version>0.13.0</jjwt-version>
         <maven-compiler-plugin-version>3.14.0</maven-compiler-plugin-version>
         <maven-javadoc-plugin-version>3.11.2</maven-javadoc-plugin-version>
-        <docker-java-version>3.5.1</docker-java-version>
+        <docker-java-version>3.7.1</docker-java-version>
     </properties>
 
     <dependencyManagement>
@@ -132,7 +132,7 @@
         <dependency>
             <groupId>io.livekit</groupId>
             <artifactId>livekit-server</artifactId>
-            <version>0.11.1</version>
+            <version>0.12.1</version>
         </dependency>
         <!-- Testing -->
         <dependency>

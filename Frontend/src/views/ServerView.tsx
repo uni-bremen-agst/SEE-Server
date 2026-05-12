@@ -4,7 +4,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowLeft, faDownload, faEye, faPlay, faStop, faClipboard, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { grey } from "@mui/material/colors";
 import Avatar from "../components/Avatar";
-import { useContext, useEffect, useState } from "react";
+import { use, useCallback, useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 import Server from "../types/Server";
 import { AuthContext } from "../contexts/AuthContext";
@@ -39,7 +39,7 @@ const modalStyle = {
 };
 
 function ServerView() {
-  const { axiosInstance } = useContext(AuthContext);
+  const { axiosInstance } = use(AuthContext);
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -85,7 +85,7 @@ function ServerView() {
     ).finally(() => setIsBusy(false));
   }
 
-  async function refreshData() {
+  const refreshData = useCallback(async () => {
     if (!serverID) return;
     await axiosInstance.get(`/server/`, { params: { id: serverID } }).then(
       (response) => {
@@ -98,7 +98,7 @@ function ServerView() {
     ).catch(
       () => AppUtils.notifyOffline()
     );
-  }
+  }, [axiosInstance, serverID])
 
   useEffect(() => {
     refreshData();
@@ -106,7 +106,7 @@ function ServerView() {
     return () => {
       clearInterval(refreshInterval);
     }
-  }, [location.state]);
+  }, [location.state, refreshData]);
 
   return (
     <Container sx={{ padding: "3em" }}>
@@ -122,7 +122,7 @@ function ServerView() {
           <Typography id="delete-server-modal-description" sx={{ marginTop: "2em" }}>
             Are you sure you want to delete server <b>{server ? server.name : ""}</b>?
           </Typography>
-          <Stack justifyContent="end" direction="row" spacing={2} sx={{ marginTop: "2em" }}>
+          <Stack spacing={2} direction="row" sx={{ marginTop: "2em", justifyContent: "end" }}>
             <Button variant="contained" color="secondary" sx={{ borderRadius: "25px" }} onClick={() => setShowDeleteServerModal(false)}>
               Cancel
             </Button>
@@ -134,158 +134,159 @@ function ServerView() {
       </Modal>
       <Header />
       <Typography variant="h4">
-        <Box display={"inline"} sx={{ "&:hover": { cursor: "pointer" } }}>
+        <Box sx={{ "&:hover": { cursor: "pointer" }, display: "inline" }}>
           <FontAwesomeIcon icon={faArrowLeft} onClick={() => navigate(-1)} />&nbsp;
         </Box>
         Server Details
       </Typography>
-      {!server
-        ? <Typography>Server not found.</Typography>
-        : <Card sx={{ marginTop: "2em", borderRadius: "25px", height: "calc(100% - 100px)", overflow: "auto" }}>
-          <CardContent sx={{ height: "calc(100% - 3em)" }}>
-            <Stack direction="column" spacing={2} height={"100%"}>
-              <Stack direction="row" spacing={2}>
-                <Box width={140} height={140}>
-                  <Card sx={{ width: "100%", height: "100%" }}>
-                    <Avatar width={140} height={140} avatarSeed={server.avatarSeed} avatarColor={server.avatarColor} />
-                  </Card>
-                </Box>
-                <Stack direction="column" spacing={1}>
-                  <Typography variant="h6">{server.name}</Typography>
-                  {server.status == "ONLINE"
-                    ? <Typography>Online since: {new Date(server.startTime * 1000).toLocaleDateString()} {new Date(server.startTime * 1000).toLocaleTimeString()}</Typography>
-                    : <Typography>Offline since:
-                      {
-                        server.stopTime
-                          ? ` ${new Date(server.stopTime * 1000).toLocaleDateString()} ${new Date(server.stopTime * 1000).toLocaleTimeString()}`
-                          : ` ${new Date(server.creationTime * 1000).toLocaleDateString()} ${new Date(server.creationTime * 1000).toLocaleTimeString()}`
-                      }
-                    </Typography>
-                  }
-                  <Stack direction="row">
-                    <Typography>Address:&nbsp;</Typography>
-                    <Typography sx={{ fontFamily: "monospace" }}>{server.containerAddress}:{server.containerPort}</Typography>
-                    <IconButton
-                      size="small"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        e.preventDefault();
-                        navigator.clipboard.writeText(`${server.containerAddress}:${server.containerPort}`);
-                        enqueueSnackbar('Copied address to clipboard.', { variant: "info" });
-                      }}>
-                      <FontAwesomeIcon icon={faClipboard} />
-                    </IconButton>
-                  </Stack>
-                  {server.serverPassword &&
+      {
+        !server
+          ? <Typography>Server not found.</Typography>
+          : <Card sx={{ marginTop: "2em", borderRadius: "25px", height: "calc(100% - 100px)", overflow: "auto" }}>
+            <CardContent sx={{ height: "calc(100% - 3em)" }}>
+              <Stack direction="column" spacing={2} sx={{ height: "100%" }}>
+                <Stack direction="row" spacing={2}>
+                  <Box sx={{ width: 140, height: 140 }}>
+                    <Card sx={{ width: "100%", height: "100%" }}>
+                      <Avatar width={140} height={140} avatarSeed={server.avatarSeed} avatarColor={server.avatarColor} />
+                    </Card>
+                  </Box>
+                  <Stack direction="column" spacing={1}>
+                    <Typography variant="h6">{server.name}</Typography>
+                    {server.status == "ONLINE"
+                      ? <Typography>Online since: {new Date(server.startTime * 1000).toLocaleDateString()} {new Date(server.startTime * 1000).toLocaleTimeString()}</Typography>
+                      : <Typography>Offline since:
+                        {
+                          server.stopTime
+                            ? ` ${new Date(server.stopTime * 1000).toLocaleDateString()} ${new Date(server.stopTime * 1000).toLocaleTimeString()}`
+                            : ` ${new Date(server.creationTime * 1000).toLocaleDateString()} ${new Date(server.creationTime * 1000).toLocaleTimeString()}`
+                        }
+                      </Typography>
+                    }
                     <Stack direction="row">
-                      <Typography>Password:&nbsp;</Typography>
-                      <Typography sx={{ fontFamily: "monospace" }}>{showPassword ? server.serverPassword : server.serverPassword.replace(/./g, "\u25CF")}</Typography>
-                      <IconButton size="small" onClick={() => setShowPassword(!showPassword)}>
-                        <FontAwesomeIcon icon={faEye} />
-                      </IconButton>
+                      <Typography>Address:&nbsp;</Typography>
+                      <Typography sx={{ fontFamily: "monospace" }}>{server.containerAddress}:{server.containerPort}</Typography>
                       <IconButton
                         size="small"
                         onClick={(e) => {
                           e.stopPropagation();
                           e.preventDefault();
-                          navigator.clipboard.writeText(`${server.serverPassword}`);
-                          enqueueSnackbar('Copied password to clipboard.', { variant: "info" });
+                          navigator.clipboard.writeText(`${server.containerAddress}:${server.containerPort}`);
+                          enqueueSnackbar('Copied address to clipboard.', { variant: "info" });
                         }}>
                         <FontAwesomeIcon icon={faClipboard} />
                       </IconButton>
                     </Stack>
-                  }
-                </Stack>
-                <Stack direction="column">
-                  {getServerStatus(server.status)}
-                  <Stack direction="row">
-                    {!isBusy && server.status !== "ONLINE" &&
-                      <IconButton
-                        aria-label="Start"
+                    {server.serverPassword &&
+                      <Stack direction="row">
+                        <Typography>Password:&nbsp;</Typography>
+                        <Typography sx={{ fontFamily: "monospace" }}>{showPassword ? server.serverPassword : server.serverPassword.replace(/./g, "\u25CF")}</Typography>
+                        <IconButton size="small" onClick={() => setShowPassword(!showPassword)}>
+                          <FontAwesomeIcon icon={faEye} />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            navigator.clipboard.writeText(`${server.serverPassword}`);
+                            enqueueSnackbar('Copied password to clipboard.', { variant: "info" });
+                          }}>
+                          <FontAwesomeIcon icon={faClipboard} />
+                        </IconButton>
+                      </Stack>
+                    }
+                  </Stack>
+                  <Stack direction="column">
+                    {getServerStatus(server.status)}
+                    <Stack direction="row">
+                      {!isBusy && server.status !== "ONLINE" &&
+                        <IconButton
+                          aria-label="Start"
+                          onMouseDown={(e) => { e.stopPropagation() }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            startServer();
+                          }}>
+                          <FontAwesomeIcon icon={faPlay} />
+                        </IconButton>
+                      }
+                      {!isBusy && server.status === "ONLINE" &&
+                        <IconButton
+                          aria-label="Stop"
+                          onMouseDown={(e) => { e.stopPropagation() }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            stopServer();
+                          }}>
+                          <FontAwesomeIcon icon={faStop} />
+                        </IconButton>
+                      }
+                      {isBusy && <CircularProgress />}
+                      {!isBusy && <IconButton
+                        aria-label="Delete"
                         onMouseDown={(e) => { e.stopPropagation() }}
                         onClick={(e) => {
                           e.stopPropagation();
                           e.preventDefault();
-                          startServer();
+                          setShowDeleteServerModal(true);
                         }}>
-                        <FontAwesomeIcon icon={faPlay} />
-                      </IconButton>
-                    }
-                    {!isBusy && server.status === "ONLINE" &&
-                      <IconButton
-                        aria-label="Stop"
-                        onMouseDown={(e) => { e.stopPropagation() }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          e.preventDefault();
-                          stopServer();
-                        }}>
-                        <FontAwesomeIcon icon={faStop} />
-                      </IconButton>
-                    }
-                    {isBusy && <CircularProgress />}
-                    {!isBusy && <IconButton
-                      aria-label="Delete"
-                      onMouseDown={(e) => { e.stopPropagation() }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        e.preventDefault();
-                        setShowDeleteServerModal(true);
-                      }}>
-                      <FontAwesomeIcon icon={faTrash} />
-                    </IconButton>}
+                        <FontAwesomeIcon icon={faTrash} />
+                      </IconButton>}
+                    </Stack>
                   </Stack>
                 </Stack>
+                {files && files.length > 0 &&
+                  <div>
+                    <Typography variant="h6" sx={{ marginBottom: "6pt", marginTop: "6pt" }}>Project Files</Typography>
+                    <Card sx={{ borderRadius: "25px", backgroundColor: grey[200], flexGrow: 1, overflow: "auto", minHeight: "100px" }}>
+                      <CardContent>
+                        <List>
+                          {
+                            files?.map((projectFile) =>
+                              <ListItem sx={{ backgroundColor: "white", borderRadius: "25px", marginBottom: "1em" }} key={projectFile.id}>
+                                <Grid container>
+                                  <Grid size={{ xs: 5 }}>
+                                    <ListItemText>
+                                      <Typography sx={{ fontWeight: "bold", marginLeft: "2pt" }}>{projectFile.name}</Typography>
+                                    </ListItemText>
+                                  </Grid>
+                                  <Grid size={{ xs: 4 }}>
+                                    <ListItemText>
+                                      <Typography sx={{ fontStyle: "italic" }}>{ProjectTypeUtils.getLabel(projectFile.projectType)}</Typography>
+                                    </ListItemText>
+                                  </Grid>
+                                  <Grid size={{ xs: 2 }} sx={{ textAlign: "right" }}>
+                                    <ListItemText>
+                                      <Typography>{Number(projectFile.size / 1024 / 1024).toFixed(2)} MiB</Typography>
+                                    </ListItemText>
+                                  </Grid>
+                                  <Grid size={{ xs: 1 }} sx={{ textAlign: "right" }}>
+                                    <ListItemText>
+                                      <a href={axiosInstance.getUri() + "file/download?id=" + projectFile.id} download={projectFile.name} rel="noopener noreferrer" target="_blank" style={{ textDecoration: 'none' }}>
+                                        <IconButton
+                                          size="small">
+                                          <FontAwesomeIcon icon={faDownload} />
+                                        </IconButton>
+                                      </a>
+                                    </ListItemText>
+                                  </Grid>
+                                </Grid>
+                              </ListItem>
+                            )
+                          }
+                        </List>
+                      </CardContent>
+                    </Card>
+                  </div>
+                }
               </Stack>
-              {files && files.length > 0 &&
-                <div>
-                  <Typography variant="h6" sx={{ marginBottom: "6pt", marginTop: "6pt" }}>Project Files</Typography>
-                  <Card sx={{ borderRadius: "25px", backgroundColor: grey[200], flexGrow: 1, overflow: "auto", minHeight: "100px" }}>
-                    <CardContent>
-                      <List>
-                        {
-                          files?.map((projectFile) =>
-                            <ListItem sx={{ backgroundColor: "white", borderRadius: "25px", marginBottom: "1em" }} key={projectFile.id}>
-                              <Grid container>
-                                <Grid size={{xs: 5}}>
-                                  <ListItemText>
-                                    <Typography sx={{ fontWeight: "bold", marginLeft: "2pt" }}>{projectFile.name}</Typography>
-                                  </ListItemText>
-                                </Grid>
-                                <Grid size={{xs: 4}}>
-                                  <ListItemText>
-                                    <Typography sx={{ fontStyle: "italic" }}>{ProjectTypeUtils.getLabel(projectFile.projectType)}</Typography>
-                                  </ListItemText>
-                                </Grid>
-                                <Grid size={{xs: 2}} sx={{ textAlign: "right" }}>
-                                  <ListItemText>
-                                    <Typography>{Number(projectFile.size / 1024 / 1024).toFixed(2)} MiB</Typography>
-                                  </ListItemText>
-                                </Grid>
-                                <Grid size={{xs: 1}} sx={{ textAlign: "right" }}>
-                                  <ListItemText>
-                                    <a href={axiosInstance.getUri() + "file/download?id=" + projectFile.id} download={projectFile.name} rel="noopener noreferrer" target="_blank" style={{ textDecoration: 'none' }}>
-                                      <IconButton
-                                        size="small">
-                                        <FontAwesomeIcon icon={faDownload} />
-                                      </IconButton>
-                                    </a>
-                                  </ListItemText>
-                                </Grid>
-                              </Grid>
-                            </ListItem>
-                          )
-                        }
-                      </List>
-                    </CardContent>
-                  </Card>
-                </div>
-              }
-            </Stack>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
       }
-    </Container>
+    </Container >
   )
 }
 

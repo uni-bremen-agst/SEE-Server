@@ -1,25 +1,21 @@
-import globals from "globals";
-import pluginJs from "@eslint/js";
-import tseslint from "typescript-eslint";
-import pluginReactConfig from "eslint-plugin-react/configs/recommended.js";
-import { fixupConfigRules } from "@eslint/compat";
+import { defineConfig } from "eslint/config";
+import js from '@eslint/js';
+import tseslint from 'typescript-eslint';
+import eslintReact from "@eslint-react/eslint-plugin";
+import globals from 'globals';
 
-
-export default [
-  {files: ["**/*.{js,mjs,cjs,ts,jsx,tsx}"]},
-  { languageOptions: { parserOptions: { ecmaFeatures: { jsx: true } } } },
-  {languageOptions: { globals: globals.browser }},
-  pluginJs.configs.recommended,
-  ...tseslint.configs.recommended,
-  ...fixupConfigRules(pluginReactConfig),
+export default defineConfig(
   {
-    settings: {
-      react: {
-        version: 'detect',
+    files: ["**/*.{js,mjs,cjs,ts,jsx,tsx}"],
+    languageOptions: {
+      globals: {
+        ...globals.browser,
       },
     },
-    rules: {
-      'react/react-in-jsx-scope': 'off',
-    },
+    extends: [
+      js.configs.recommended,
+      tseslint.configs.recommended,
+      eslintReact.configs.recommended
+    ]
   },
-];
+);

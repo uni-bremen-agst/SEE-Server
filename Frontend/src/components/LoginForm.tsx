@@ -1,11 +1,11 @@
 import { Button, Card, CardContent, CardMedia, Divider, FormControl, FormHelperText, TextField } from "@mui/material";
 import seeLogo from "../img/see-logo.png";
-import { useContext, useRef, useState } from "react";
+import { use, useRef, useState } from "react";
 import { AuthContext } from "../contexts/AuthContext";
 import AppUtils from "../utils/AppUtils";
 
 function LoginForm() {
-  const { setUser, axiosInstance } = useContext(AuthContext);
+  const { setUser, axiosInstance } = use(AuthContext);
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -65,23 +65,27 @@ function LoginForm() {
             label="Username"
             type="text"
             sx={{ width: "100%", marginBottom: "1em" }}
-            InputProps={{ sx: { borderRadius: "15px" } }}
             variant="standard"
             value={username}
             onChange={(e) => { setError(false); setUsername(e.target.value) }}
             onKeyDown={handleUsernameKeyDown}
             autoFocus
+            slotProps={{
+              input: { sx: { borderRadius: "15px" } }
+            }}
           />
           <TextField
             label="Password"
             type="password"
             sx={{ width: "100%", marginBottom: "1em" }}
-            InputProps={{ sx: { borderRadius: "15px" } }}
             variant="standard"
             value={password}
             onChange={(e) => { setError(false); setPassword(e.target.value) }}
             onKeyDown={handlePasswordKeyDown}
             inputRef={passwordInputRef}
+            slotProps={{
+              input: { sx: { borderRadius: "15px" } }
+            }}
           />
           <FormHelperText hidden={!error}>Authentication failed.</FormHelperText>
           <Button
@@ -94,7 +98,7 @@ function LoginForm() {
         </FormControl>
       </CardContent>
     </Card>
-  )
+  );
 }
 
 export default LoginForm;
