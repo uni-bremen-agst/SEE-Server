@@ -1,6 +1,6 @@
 package de.unibremen.swt.see.manager.service;
 
-import de.unibremen.swt.see.manager.model.File;
+import de.unibremen.swt.see.manager.model.ProjectFile;
 import de.unibremen.swt.see.manager.model.RoleType;
 import de.unibremen.swt.see.manager.model.Server;
 import de.unibremen.swt.see.manager.model.User;
@@ -66,13 +66,13 @@ public class AccessControlService {
      * Evaluates if given user has access to given file.
      *
      * @param user the user
-     * @param file the file
+     * @param projectFile the file
      * @return {@code true} if the user is granted access to the file
      * @throws AccessDeniedException if the access cannot be granted
      */
-    public boolean canAccessFile(User user, File file) throws AccessDeniedException {
-        if (user != null && file != null) {
-            final Server server = file.getServer();
+    public boolean canAccessFile(User user, ProjectFile projectFile) throws AccessDeniedException {
+        if (user != null && projectFile != null) {
+            final Server server = projectFile.getServer();
             try {
                 return canAccessServer(user, server);
             } catch (AccessDeniedException e) {
@@ -92,8 +92,8 @@ public class AccessControlService {
      */
     public boolean canAccessFile(UUID userId, UUID fileId) throws AccessDeniedException {
         final User user = userService.get(userId);
-        final File file = fileService.get(fileId);
-        return canAccessFile(user, file);
+        final ProjectFile projectFile = fileService.get(fileId);
+        return canAccessFile(user, projectFile);
     }
 
 }

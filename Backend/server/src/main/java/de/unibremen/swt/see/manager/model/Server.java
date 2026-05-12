@@ -107,7 +107,7 @@ public class Server {
      */
     @JsonIgnore
     @OneToMany(mappedBy = SERVER_FK_NAME)
-    private Set<File> serverFiles;
+    private Set<ProjectFile> serverProjectFiles;
 
     /**
      * The snapshots associated with the game server.

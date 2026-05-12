@@ -14,12 +14,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.persistence.EntityNotFoundException;
-
-import java.io.IOException;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
 import jakarta.servlet.ServletInputStream;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +23,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 /**
  * Handles HTTP requests for the /server endpoint.
@@ -69,6 +68,11 @@ public class ServerController {
      * Name of the ID URL parameter.
      */
     private static final String ID_PARAMETER_NAME = "id";
+
+    /**
+     * Specifies if a single root dir should be removed when extracting a zip archive.
+     */
+    private static final boolean STRIP_SINGLE_ROOT_DIR = true;
 
     /**
      * Retrieves metadata of the server identified by the specified ID.
@@ -134,17 +138,108 @@ public class ServerController {
      * {@code 500 Internal Server Error} if the file could not be persisted, or
      * {@code 401 Unauthorized} if access cannot be granted.
      */
-    @PostMapping("/addFile")
+    @PostMapping("/addProjectFile")
     @RequireAdmin
-    public ResponseEntity<File> addFile(
+    public ResponseEntity<ProjectFile> addFile(
             @RequestParam(ID_PARAMETER_NAME) UUID serverId,
             @RequestParam("projectType") String projectType,
             @RequestParam("file") MultipartFile file) {
-        File responseFile = serverService.addFile(serverId, projectType, file);
-        if (responseFile == null) {
+        ProjectFile responseProjectFile = serverService.addProjectFile(serverId, projectType, file, STRIP_SINGLE_ROOT_DIR);
+        if (responseProjectFile == null) {
             return ResponseEntity.internalServerError().build();
         }
-        return ResponseEntity.ok().body(responseFile);
+        return ResponseEntity.ok().body(responseProjectFile);
+    }
+
+    /**
+     * Updates a file in a project of an existing server.
+     * <p/>
+     * Note that file updates follow a "last write wins" policy. If the file is edited by multiple users, the last write to the file will be kept.
+     *
+     * @param id The ID of the server.
+     * @param projectType The project type the file belongs to.
+     * @param filePath The path of the file, relative to the project directory.
+     * @param httpServletRequest The HTTP request containing the file content.
+     * @return {@code 204 NO_CONTENT} when the update was successful. {@code 500 Internal Server Error} when an error occurred in the process.
+     */
+    @PostMapping(path = "/updateProjectFile", consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    @RequireAdminOrUserAndOwnerOfServer
+    public ResponseEntity<?> updateFile(
+            @RequestParam(ID_PARAMETER_NAME) UUID id,
+            @RequestParam("projectType") String projectType,
+            @RequestParam("filePath") String filePath,
+            HttpServletRequest httpServletRequest) {
+        Server server = serverService.get(id);
+        if (server == null) {
+            return ResponseEntity.notFound().build();
+        }
+        try {
+            serverService.updateProjectFile(server, projectType, filePath, httpServletRequest.getInputStream());
+        } catch (InterruptedException | IllegalArgumentException e) {
+            return ResponseEntity.internalServerError().body(ControllerUtils.wrapMessage("Error during file update!"));
+        } catch (IOException e) {
+            return ResponseEntity.badRequest().body(ControllerUtils.wrapMessage("Error during file update! Can't extract file from request."));
+        }
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Renames a file in a project of an existing server.
+     * <p/>
+     * Note that the file will be updated with "last write wins". If the file is edited by multiple users, the last write to the file will be kept.
+     *
+     * @param id The ID of the server.
+     * @param projectType The project type the file belongs to.
+     * @param filePath The old path of the file, relative to the project directory.
+     * @param newFilePath The new path of the file, relative to the project directory.
+     * @return {@code 204 NO_CONTENT} when the rename  was successful. {@code 500 Internal Server Error} when an error occurred in the process.
+     */
+    @PostMapping(path = "/renameProjectFile")
+    @RequireAdminOrUserAndOwnerOfServer
+    public ResponseEntity<?> renameFile(
+            @RequestParam(ID_PARAMETER_NAME) UUID id,
+            @RequestParam("projectType") String projectType,
+            @RequestParam("oldFilePath") String filePath,
+            @RequestParam("newFilePath") String newFilePath) {
+        Server server = serverService.get(id);
+        if (server == null) {
+            return ResponseEntity.notFound().build();
+        }
+        try {
+            serverService.renameProjectFile(server, projectType, filePath, newFilePath);
+        } catch (InterruptedException e) {
+            return ResponseEntity.internalServerError().body(ControllerUtils.wrapMessage("Error during file rename!"));
+        } catch (IOException e) {
+            return ResponseEntity.internalServerError().body(ControllerUtils.wrapMessage("Error during file rename! Could not move or validate file path."));
+        }
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Deletes a file in a project of an existing server.
+     *
+     * @param id The ID of the server
+     * @param projectType The project type the file belongs to.
+     * @param filePath The path of the file, relative to the project directory.
+     * @return {@code 204 NO_CONTENT} when the file was deleted. {@code 500 Internal Server Error} when an error occurred in the process.
+     */
+    @PostMapping(path = "/deleteProjectFile")
+    @RequireAdminOrUserAndOwnerOfServer
+    public ResponseEntity<?> deleteFile(
+            @RequestParam(ID_PARAMETER_NAME) UUID id,
+            @RequestParam("projectType") String projectType,
+            @RequestParam("filePath") String filePath
+    ) {
+        Server server = serverService.get(id);
+        if (server == null) {
+            return ResponseEntity.notFound().build();
+        }
+        try {
+            serverService.deleteProjectFile(server, projectType, filePath);
+        } catch (InterruptedException | IOException e) {
+            return ResponseEntity.internalServerError().body(ControllerUtils.wrapMessage("Error during file deletion!"));
+        }
+        return ResponseEntity.noContent().build();
     }
 
     /**
@@ -229,7 +324,7 @@ public class ServerController {
      */
     @GetMapping("/files")
     @RequireAdminOrUserAndOwnerOfServer
-    public ResponseEntity<List<File>> getFiles(@RequestParam(ID_PARAMETER_NAME) UUID id) {
+    public ResponseEntity<List<ProjectFile>> getFiles(@RequestParam(ID_PARAMETER_NAME) UUID id) {
         return ResponseEntity.ok().body(serverService.getFilesForServer(id));
     }
 

@@ -16,7 +16,7 @@ import lombok.Setter;
 @Entity
 @Table(name = "files")
 @RequiredArgsConstructor
-public class File {
+public class ProjectFile {
 
     /**
      * ID of the file.
