@@ -39,7 +39,7 @@ services:
       - traefik
       - livekit
     volumes:
-      - backend-data:/see
+      - ./backend-data:/see
       # Docker daemon must be reachable from backend container to spawn game servers.
       - ${DOCKER_SOCKET}:/var/run/docker.sock
     environment:
