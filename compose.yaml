@@ -39,7 +39,7 @@ services:
       - traefik
       - livekit
     volumes:
-      - backend-data:/see
+      - ./backend-data:/see
       # Docker daemon must be reachable from backend container to spawn game servers.
       - ${DOCKER_SOCKET}:/var/run/docker.sock
     environment:
@@ -47,6 +47,7 @@ services:
       # Use the env file instead
       BACKEND_DOMAIN: ${DOMAIN_NAME}
       FRONTEND_DOMAIN: ${DOMAIN_NAME}
+      BACKEND_API: http://${DOMAIN_NAME}:${EXTERNAL_PORT}/api/v1/
       FRONTEND_SCHEME: HTTP
       FILESTORAGE_DIR: /see/file-storage
       SQLITE_DB_FILE: /see/database.db
@@ -60,6 +61,7 @@ services:
       ADD_ADMIN_USERNAME: ${ADD_ADMIN_USERNAME}
       ADD_ADMIN_PASSWORD: ${ADD_ADMIN_PASSWORD}
       LIVEKIT_API_URL: ${LIVEKIT_API_URL}
+      LIVEKIT_API_PORT: ${LIVEKIT_API_PORT}
       LIVEKIT_API_KEY: ${LIVEKIT_API_KEY}
       LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET}
     networks:

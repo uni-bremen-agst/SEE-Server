@@ -1,37 +1,42 @@
 package de.unibremen.swt.see.manager.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.dockerjava.api.exception.InternalServerErrorException;
 import com.github.dockerjava.api.exception.NotFoundException;
 import com.github.dockerjava.api.exception.NotModifiedException;
-import de.unibremen.swt.see.manager.model.Config;
-import de.unibremen.swt.see.manager.model.File;
-import de.unibremen.swt.see.manager.model.ProjectType;
-import de.unibremen.swt.see.manager.model.RoleType;
-import de.unibremen.swt.see.manager.model.Server;
-import de.unibremen.swt.see.manager.model.ServerStatusType;
-import de.unibremen.swt.see.manager.model.User;
+import de.unibremen.swt.see.manager.model.*;
+import de.unibremen.swt.see.manager.model.livekitmessages.FileMessage;
+import de.unibremen.swt.see.manager.model.livekitmessages.FileRename;
+import de.unibremen.swt.see.manager.model.livekitmessages.FileUpdate;
 import de.unibremen.swt.see.manager.repository.ConfigRepository;
 import de.unibremen.swt.see.manager.repository.ServerRepository;
 import de.unibremen.swt.see.manager.util.ServerLockManager;
-import io.livekit.server.*;
+import io.livekit.server.AccessToken;
+import io.livekit.server.RoomJoin;
+import io.livekit.server.RoomName;
+import io.livekit.server.RoomServiceClient;
 import jakarta.annotation.Nullable;
 import jakarta.persistence.EntityNotFoundException;
+import livekit.LivekitModels;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.integration.support.locks.LockRegistry;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.SecureRandom;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
-
-import livekit.LivekitModels;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
 /**
  * Service class for managing server-related operations.
@@ -93,6 +98,11 @@ public class ServerService {
     private String externalDockerHost;
 
     /**
+     * Livekit room instance to send file updates.
+     */
+    private final RoomServiceClient roomServiceClient;
+
+    /**
      * API URL for the LiveKit instance.
      */
     @Value("${see.app.livekit.url}")
@@ -115,6 +125,11 @@ public class ServerService {
      */
     @Value("${see.app.livekit.tokenDuration}")
     private int liveKitTokenDuration;
+
+    /**
+     * Lock registry for concurrent file writes.
+     */
+    private final LockRegistry lockRegistry;
 
     /**
      * The lock manager for concurrent writes.
@@ -140,6 +155,21 @@ public class ServerService {
      * Length of generated room passwords.
      */
     private final static int PASSWORD_LENGTH = 24;
+
+    /**
+     * Livekit topic name for file updates.
+     */
+    private final static String LIVEKIT_FILE_SYNC_TOPIC_NAME = "file-update";
+
+    /**
+     * Livekit topic name for file renames.
+     */
+    private final static String LIVEKIT_FILE_RENAME_TOPIC_NAME = "file-rename";
+
+    /**
+     * Livekit topic name for file deletions.
+     */
+    private final static String LIVEKIT_FILE_DELETE_TOPIC_NAME = "file-delete";
 
     /**
      * Retrieves a server by its ID.
@@ -218,10 +248,11 @@ public class ServerService {
      * @param serverId the ID identifying the server instance
      * @param projectTypeStr the project type of the file
      * @param multipartFile the file content
+     * @param stripSingleRootDir determines if a single root directory is stripped during extraction (if present) to match behavior of client.
      * @return the created file, or {@code null} if the server was not found or
      * an error occurred while storing the file
      */
-    public File addFile(UUID serverId, String projectTypeStr, MultipartFile multipartFile) {
+    public ProjectFile addProjectFile(UUID serverId, String projectTypeStr, MultipartFile multipartFile, boolean stripSingleRootDir) {
         Optional<Server> optServer = serverRepo.findById(serverId);
         if (optServer.isEmpty()) {
             log.error("Server not found with ID: {}", serverId);
@@ -233,7 +264,7 @@ public class ServerService {
         log.info("Adding file {} to server {}", multipartFile.getOriginalFilename(), server.getName());
 
         try {
-            return fileService.create(server, projectType, multipartFile);
+            return fileService.create(server, projectType, multipartFile, stripSingleRootDir);
         } catch (IOException e) {
             log.error("Unable to add file to server {}: ", serverId, e);
         }
@@ -241,12 +272,144 @@ public class ServerService {
     }
 
     /**
+     * Updates a file of a specific project of a server.
+     * <p>
+     * The update will also be propagated to all other active clients on that server.
+     * This action will be performed atomic
+     *
+     * @param server the server the file belongs to.
+     * @param projectTypeStr the project type of the file.
+     * @param fileName the file name of the file relative to the project.
+     * @param fileIs the file content.
+     */
+    public void updateProjectFile(Server server,
+                                  String projectTypeStr,
+                                  String fileName,
+                                  InputStream fileIs) throws InterruptedException, IllegalArgumentException, IOException {
+        Path p = Paths.get(server.getId().toString()).resolve(projectTypeStr).resolve(fileName);
+        lockRegistry.executeLocked(p, () -> {
+            log.info("Updating file {} of server {}", fileName, server.getName());
+
+            try {
+                String fileContent = new String(fileIs.readAllBytes(), StandardCharsets.UTF_8);
+                fileService.updateFileInProject(server, projectTypeStr, fileName, fileContent);
+                sendFileUpdateToClientViaLivekit(server, projectTypeStr, fileContent, fileName);
+            } catch (IOException e) {
+                log.error("Unable to update file {} in server {}: ", fileName, server.getId(), e);
+                throw e;
+            }
+        });
+    }
+
+    /**
+     * Renames a file of a specific project of a server.
+     * <p>
+     * The file at {@code filePath} must exist and {@code newFilePath} must belong to the same project.
+     * This action will be performed atomic
+     *
+     * @param server The server the file belongs to.
+     * @param projectType The project type of the file.
+     * @param filePath The old file path of the file relative to the project.
+     * @param newFilePath The new file path of the file relative to the project.
+     * @throws InterruptedException Will be thrown if the thread is interrupted.
+     * @throws IOException Will be thrown if the file cannot be renamed.
+     */
+    public void renameProjectFile(Server server, String projectType, String filePath, String newFilePath) throws InterruptedException, IOException {
+        Path p = Paths.get(server.getId().toString()).resolve(projectType).resolve(filePath);
+
+        lockRegistry.executeLocked(p, () -> {
+            log.info("Renaming file {} of server {}", filePath, server.getName());
+
+            fileService.renameFileInProject(server, projectType, filePath, newFilePath);
+            sendFileRenameToClientViaLivekit(server, projectType, filePath, newFilePath);
+        });
+    }
+
+    /**
+     * Deletes a given file of a given server in a project.
+     * <p>
+     * This action will be performed atomic
+     *
+     * @param server The server te file belongs to.
+     * @param projectType The project type of the file.
+     * @param filePath The file path of the file relative to the project.
+     * @throws InterruptedException Will be thrown if the thread is interrupted.
+     * @throws IOException Will be thrown if the file cannot be deleted.
+     */
+    public void deleteProjectFile(Server server, String projectType, String filePath) throws InterruptedException, IOException {
+        Path p = Paths.get(server.getId().toString()).resolve(projectType).resolve(filePath);
+        lockRegistry.executeLocked(p, () -> {
+            log.info("Deleting file {} of server {}", filePath, server.getName());
+
+            fileService.deleteFileInProject(server, projectType, filePath);
+            sendFileDeleteToClientViaLivekit(server, projectType, filePath);
+        });
+    }
+
+    /**
+     * Sends the file delete operation to all clients connected to the server via Livekit.
+     *
+     * @param server The server the file belongs to.
+     * @param projectType The project type of the file.
+     * @param fileName The path of the file relative to the project.
+     * @throws IOException Will be thrown if the Livektit message can't be sent.
+     */
+    private void sendFileDeleteToClientViaLivekit(Server server, String projectType, String fileName) throws IOException {
+        FileMessage delete = new FileMessage(fileName, projectType);
+        encodeMessageAndSend(delete, server.getName(), LIVEKIT_FILE_DELETE_TOPIC_NAME);
+    }
+
+    /**
+     * Sends the file rename operation to all clients connected to the server via Livekit.
+     *
+     * @param server The server the file belongs to.
+     * @param projectType The project type of the file.
+     * @param oldFileName The old path of the file relative to the project.
+     * @param newFileName The new path of the file relative to the project.
+     * @throws IOException Will be thrown if the Livektit message can't be sent.
+     */
+    private void sendFileRenameToClientViaLivekit(Server server, String projectType, String oldFileName, String newFileName) throws IOException {
+        FileRename rename = new FileRename(oldFileName, projectType, newFileName);
+        encodeMessageAndSend(rename, server.getName(), LIVEKIT_FILE_RENAME_TOPIC_NAME);
+    }
+
+    /**
+     * Sends the file update operation to all clients connected to the server via Livekit.
+     *
+     * @param server The server the file belongs to.
+     * @param projectType The project type of the file.
+     * @param fileContent The new content of the file.
+     * @param fileName The path of the file relative to the project.
+     * @throws IOException Will be thrown if the Livektit message can't be sent.
+     */
+    private void sendFileUpdateToClientViaLivekit(Server server, String projectType, String fileContent, String fileName) throws IOException {
+        FileUpdate update = new FileUpdate(fileName, fileContent, projectType);
+        encodeMessageAndSend(update, server.getName(), LIVEKIT_FILE_SYNC_TOPIC_NAME);
+    }
+
+    /**
+     * Encodes a given message object into a JSON string and sends it to a Livekit room.
+     *
+     * @param obj The object to be encoded and sent.
+     * @param serverName The name of the server to send the message to.
+     * @param topic The topic to send the message to.
+     * @throws IOException If there is an error while encoding or sending the message.
+     */
+    private void encodeMessageAndSend(Object obj, String serverName, String topic) throws IOException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        byte[] jsonData = objectMapper.writeValueAsBytes(obj);
+
+        roomServiceClient.sendData(serverName, jsonData, LivekitModels.DataPacket.Kind.RELIABLE, Collections.emptyList(), Collections.emptyList(), topic).execute();
+    }
+
+
+    /**
      * Retrieves all files for a specific server identified by its ID.
      *
      * @param id the ID of the server
      * @return a list containing all files of the given server
      */
-    public List<File> getFilesForServer(UUID id) {
+    public List<ProjectFile> getFilesForServer(UUID id) {
         Optional<Server> optServer = serverRepo.findById(id);
         if (optServer.isEmpty()) {
             return Collections.emptyList();
@@ -552,5 +715,4 @@ public class ServerService {
         }
         return configs.get(0);
     }
-
 }

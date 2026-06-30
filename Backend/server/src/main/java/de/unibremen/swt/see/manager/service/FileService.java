@@ -1,26 +1,33 @@
 package de.unibremen.swt.see.manager.service;
 
-import de.unibremen.swt.see.manager.model.File;
+import de.unibremen.swt.see.manager.model.ProjectFile;
 import de.unibremen.swt.see.manager.model.ProjectType;
 import de.unibremen.swt.see.manager.model.Server;
 import de.unibremen.swt.see.manager.repository.FileRepository;
 import jakarta.persistence.EntityNotFoundException;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import net.lingala.zip4j.ZipFile;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.filefilter.TrueFileFilter;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
-import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
+
+import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 /**
  * Service class for managing file-related operations.
@@ -63,30 +70,144 @@ public class FileService {
      * @param server the server instance this file belongs to
      * @param projectType the type of the project
      * @param multipartFile the file content from the API request
+     * @param stripSingleRootDir determines if a single root directory is stripped during extraction (if present) to match behavior of client.
      * @return the created file, or {@code null} if the file content is empty.
      * @throws java.io.IOException if there was an I/O error while storing the
      * file
      */
-    public File create(Server server, ProjectType projectType, MultipartFile multipartFile) throws IOException {
+    public ProjectFile create(Server server, ProjectType projectType, MultipartFile multipartFile, boolean stripSingleRootDir) throws IOException {
         if (multipartFile.isEmpty()) {
             return null;
         }
 
-        File file = new File();
-        file.setName(multipartFile.getOriginalFilename());
-        file.setContentType(multipartFile.getContentType());
-        file.setServer(server);
-        file.setProjectType(projectType);
+        ProjectFile projectFile = new ProjectFile();
+        projectFile.setName(projectType.toString() + ".zip");
+        projectFile.setContentType(multipartFile.getContentType());
+        projectFile.setServer(server);
+        projectFile.setProjectType(projectType);
 
         Path path;
         try {
-            path = storeFile(file, multipartFile);
+            path = storeProjectFile(projectFile, multipartFile, projectType, stripSingleRootDir);
         } catch (IOException e) {
             throw new IOException("Error persisting file.", e);
         }
-        file.setSize(Files.size(path));
+        projectFile.setSize(Files.size(path));
 
-        return fileRepo.save(file);
+        return fileRepo.save(projectFile);
+    }
+
+    /**
+     * Sanitizes the path to a local file in a project and makes sure the file exist when {@code checkExist} is set to true.
+     * <p>
+     * If the file path lead to a location outside the project (e.g. {@code ../../../../../random-system.file}) an @see {@link IOException} is thrown.
+     *
+     * @param projectPath The path of the project directory.
+     * @param filePath The file path, relative to {@code projectPath}.
+     * @param checkExist Set to true, to check if the file exist.
+     * @return The absolute file path.
+     * @throws IllegalArgumentException When the file is outside the project directory or doesn't exist.
+     * @throws IOException When the file doesn't exist.
+     */
+    private Path getFilePathSanitized(Path projectPath, String filePath, boolean checkExist) throws IOException {
+        Path localFilePath = projectPath.resolve(filePath);
+        if (!localFilePath.normalize().startsWith(projectPath)) {
+            throw new IllegalArgumentException("File path is outside of project directory: " + filePath);
+        }
+        if (checkExist && !Files.exists(localFilePath)) {
+            throw new IOException("File does not exist: " + localFilePath);
+        }
+        return localFilePath;
+    }
+
+    /**
+     * Rebuilds the zip cache of a given project.
+     *
+     * @param server The server, the project belong to.
+     * @param projectType The type of the project.
+     * @throws IOException If the zip file can't be built.
+     */
+    private void rebuildZipCacheFile(Server server, String projectType) throws IOException {
+        Path zipPath = getServerUploadPath(server).resolve(projectType + ".zip");
+        Files.deleteIfExists(zipPath);
+
+        // Rebuild Zip file with the updated file
+        try (ZipFile zipFile = new ZipFile(zipPath.toFile())) {
+            zipFile.addFolder(getServerUploadPath(server).resolve(projectType).toFile());
+        }
+
+        Optional<ProjectFile> file = fileRepo.findByServerIdAndProjectType(server.getId(), ProjectType.valueOf(projectType));
+
+        if (file.isPresent()) {
+            ProjectFile projectFileEntity = file.get();
+            projectFileEntity.setSize(Files.size(zipPath));
+            fileRepo.save(projectFileEntity);
+        } else {
+            log.warn("ProjectFile not found for server {} and type {}, database record not updated", server.getId(), projectType);
+        }
+    }
+
+    /**
+     * Updates the content of a file in a project.
+     * <p>
+     * If the file doesn't exist yet, it will be created.
+     *
+     * @param server the server this file belongs to.
+     * @param projectType the project type of the file.
+     * @param filePath the path of the file, relative to the project directory.
+     * @param fileContents the new content of the file.
+     * @throws IOException will be thrown, when the file cant be written
+     * @throws IllegalArgumentException will be thrown if the file can't be updated.
+     */
+    public void updateFileInProject(Server server, String projectType, String filePath, String fileContents) throws IOException {
+        Path projectPath = getServerUploadPath(server).resolve(projectType);
+        Path localFilePath = getFilePathSanitized(projectPath, filePath, false);
+        Path parentPath = localFilePath.getParent();
+        if (parentPath != null) {
+            Files.createDirectories(parentPath);
+        }
+        FileUtils.touch(localFilePath.toFile());
+        Files.writeString(localFilePath, fileContents);
+
+        rebuildZipCacheFile(server, projectType);
+    }
+
+    /**
+     * Renames a file in a project.
+     *
+     * @param server the server this file belongs to.
+     * @param projectType the project type of the file.
+     * @param filePath the old path of the file, relative to the project directory.
+     * @param newFilePath the new path of the file, relative to the project directory.
+     * @throws IOException will be thrown if the file can't be renamed.
+     */
+    public void renameFileInProject(Server server, String projectType, String filePath, String newFilePath) throws IOException {
+        Path projectPath = getServerUploadPath(server).resolve(projectType);
+        Path localOldFilePath = getFilePathSanitized(projectPath, filePath, true);
+        Path localNewFilePath = getFilePathSanitized(projectPath, newFilePath, false);
+
+        Path localNewFileParentPath = localNewFilePath.getParent();
+        if (localNewFileParentPath != null) {
+            Files.createDirectories(localNewFileParentPath);
+        }
+        Files.move(localOldFilePath, localNewFilePath, REPLACE_EXISTING);
+        rebuildZipCacheFile(server, projectType);
+    }
+
+    /**
+     * Deletes a file in a project.
+     *
+     * @param server the server this file belongs to.
+     * @param projectType the project type of the file.
+     * @param filePath the path of the file.
+     * @throws IOException will be thrown if the file can't be deleted.
+     */
+    public void deleteFileInProject(Server server, String projectType, String filePath) throws IOException {
+        Path projectPath = getServerUploadPath(server).resolve(projectType);
+        Path localFilePath = getFilePathSanitized(projectPath, filePath, true);
+
+        Files.delete(localFilePath);
+        rebuildZipCacheFile(server, projectType);
     }
 
     /**
@@ -95,9 +216,9 @@ public class FileService {
      * @param fileId the ID of the file to retrieve
      * @return the file if found, or {@code null} if not found
      */
-    public File get(UUID fileId) {
+    public ProjectFile get(UUID fileId) {
         log.info("Fetching file by id {}", fileId);
-        Optional<File> optFile = fileRepo.findById(fileId);
+        Optional<ProjectFile> optFile = fileRepo.findById(fileId);
         if (optFile.isEmpty()) {
             log.error("File not found in db: {}", fileId);
             return null;
@@ -113,10 +234,10 @@ public class FileService {
      * @return file if found, or {@code null} if not found
      * @throws EntityNotFoundException if server or file could not be found
      */
-    public File getByServerAndProjectType(UUID serverId, ProjectType projectType) {
+    public ProjectFile getByServerAndProjectType(UUID serverId, ProjectType projectType) {
         log.info("Fetching file for server and project type: {}; {}", serverId, projectType);
 
-        Optional<File> optFile = fileRepo.findByServerIdAndProjectType(serverId, projectType);
+        Optional<ProjectFile> optFile = fileRepo.findByServerIdAndProjectType(serverId, projectType);
         if (optFile.isEmpty()) {
             throw new EntityNotFoundException("File not found by project type " + projectType);
         }
@@ -131,12 +252,12 @@ public class FileService {
      * <p>
      * Does not throw I/O exception if the file to delete was not found.
      *
-     * @param file the file to be deleted
+     * @param projectFile the file to be deleted
      * @throws java.io.IOException if there was an I/O error while deleting the
      * file
      */
-    public void delete(File file) throws IOException {
-        Path filePath = getPath(file);
+    public void delete(ProjectFile projectFile) throws IOException {
+        Path filePath = getPath(projectFile);
         log.info("Removing file {}", filePath);
 
         if (Files.exists(filePath) && !Files.isRegularFile(filePath)) {
@@ -148,7 +269,7 @@ public class FileService {
         } catch (NoSuchFileException e) {
             log.warn("File to delete does not exist: {}", filePath);
         }
-        fileRepo.delete(file);
+        fileRepo.delete(projectFile);
     }
 
     /**
@@ -159,17 +280,17 @@ public class FileService {
      * Does not throw I/O exception if the file to delete was not found.
      *
      * @param fileId ID of the file to be deleted
-     * @throws java.io.IOException if {@link #delete(File)} throws one
+     * @throws java.io.IOException if {@link #delete(ProjectFile)} throws one
      * @throws EntityNotFoundException if no file exists with given ID
      * @see #get(UUID)
-     * @see #delete(File)
+     * @see #delete(ProjectFile)
      */
     public void delete(UUID fileId) throws IOException {
-        File file = get(fileId);
-        if (file == null) {
+        ProjectFile projectFile = get(fileId);
+        if (projectFile == null) {
             throw new EntityNotFoundException("No entity found with ID " + fileId);
         }
-        delete(file);
+        delete(projectFile);
     }
 
     /**
@@ -178,7 +299,7 @@ public class FileService {
      * @param server the server that the files belong to
      * @return a list containing all files of the given server
      */
-    public List<File> getByServer(Server server) {
+    public List<ProjectFile> getByServer(Server server) {
         return fileRepo.findByServer(server);
     }
 
@@ -189,35 +310,54 @@ public class FileService {
      * @throws IOException if a file cannot be deleted
      */
     public void deleteFilesByServer(Server server) throws IOException {
-        List<File> files = getByServer(server);
+        List<ProjectFile> projectFiles = getByServer(server);
 
-        for (File file : files) {
-            delete(file);
+        for (ProjectFile projectFile : projectFiles) {
+            delete(projectFile);
         }
 
-        Files.delete(getServerUploadPath(server));
+        FileUtils.deleteDirectory(getServerUploadPath(server).toFile());
     }
 
 
     /**
      * Stores given file on local file system.
      *
-     * @param file the prepared file metadata
+     * @param projectFile the prepared file metadata
      * @param multipartFile the file content
+     * @param projectType the type of the project
+     * @param stripSingleRootDir determines if a single root directory is stripped during extraction (if present) to match behavior of client.
      * @return the path to where the file was stored
      * @throws IOException if there was an I/O error while storing the file
      */
-    private Path storeFile(File file, MultipartFile multipartFile) throws IOException {
-        Path filePath = getPath(file);
-        if (Files.exists(filePath)) {
-            throw new IOException("File already exists: " + filePath.toString());
+    private Path storeProjectFile(ProjectFile projectFile, MultipartFile multipartFile, ProjectType projectType, boolean stripSingleRootDir) throws IOException {
+        Path filePath = getServerUploadPath(projectFile.getServer()).resolve(projectType + ".zip");
+        Path dir = getServerUploadPath(projectFile.getServer()).resolve(projectType.toString());
+        if (filePath.toString().endsWith(".zip")) {
+            try (InputStream inputStream = multipartFile.getInputStream()) {
+                Files.copy(inputStream, filePath);
+            } catch (IOException e) {
+                throw new IOException("Unable to save file: " + projectFile.getName(), e);
+            }
+            // Unzip project to handle file updates
+            Files.createDirectories(dir);
+            try (ZipFile zipFile = new ZipFile(filePath.toString())) {
+                zipFile.extractAll(dir.toString());
+            }
+
+            List<File> dirs = FileUtils.listFilesAndDirs(dir.toFile(), TrueFileFilter.INSTANCE, null).stream().filter(x -> x.isDirectory() && !x.getAbsolutePath().equals(dir.toString())).toList();
+            boolean doStripSingleRootDir = stripSingleRootDir && FileUtils.listFiles(dir.toFile(), TrueFileFilter.INSTANCE, null).isEmpty() && dirs.size() == 1;
+            if (doStripSingleRootDir) {
+                // When the zip dir only contains a single dir.
+                File tempLocation = Files.createTempDirectory("see").toFile();
+                Files.delete(tempLocation.toPath());
+
+                FileUtils.moveDirectory(dirs.getFirst(), tempLocation);
+                FileUtils.deleteDirectory(dir.toFile());
+                FileUtils.moveDirectory(tempLocation, dir.toFile());
+            }
         }
 
-        try (InputStream inputStream = multipartFile.getInputStream()) {
-            Files.copy(inputStream, filePath);
-        } catch (IOException e) {
-            throw new IOException("Unable to save file: " + file.getName(), e);
-        }
         return filePath;
     }
 
@@ -255,18 +395,18 @@ public class FileService {
      * Gets the server path and appends the file name. File name and server must
      * not be {@code null}.
      *
-     * @param file the file to which the path should be assembled
+     * @param projectFile the file to which the path should be assembled
      * @return file system path for the given file
      * @throws IOException if one is thrown by
      * {@link #getServerUploadPath(Server)}
      * @see #getServerUploadPath(Server)
      */
-    public Path getPath(File file) throws IOException {
-        String fileName = file.getName();
+    public Path getPath(ProjectFile projectFile) throws IOException {
+        String fileName = projectFile.getName();
         if (fileName == null || fileName.isEmpty()) {
             throw new RuntimeException("File name must not be empty!");
         }
-        return getServerUploadPath(file.getServer()).resolve(fileName);
+        return getServerUploadPath(projectFile.getServer()).resolve(fileName);
     }
 
     /**
@@ -280,5 +420,6 @@ public class FileService {
         int idx = fileName.lastIndexOf('.');
         return (idx != -1) ? fileName.substring(idx + 1) : "";
     }
+
 
 }
