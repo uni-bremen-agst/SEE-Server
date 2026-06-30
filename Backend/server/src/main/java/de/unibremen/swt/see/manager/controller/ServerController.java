@@ -175,10 +175,10 @@ public class ServerController {
         }
         try {
             serverService.updateProjectFile(server, projectType, filePath, httpServletRequest.getInputStream());
-        } catch (InterruptedException | IllegalArgumentException e) {
-            return ResponseEntity.internalServerError().body(ControllerUtils.wrapMessage("Error during file update!"));
         } catch (IOException e) {
             return ResponseEntity.badRequest().body(ControllerUtils.wrapMessage("Error during file update! Can't extract file from request."));
+        } catch (Throwable e) {
+            return ResponseEntity.internalServerError().body(ControllerUtils.wrapMessage("Error during file update!"));
         }
         return ResponseEntity.noContent().build();
     }
@@ -207,10 +207,10 @@ public class ServerController {
         }
         try {
             serverService.renameProjectFile(server, projectType, filePath, newFilePath);
-        } catch (InterruptedException e) {
-            return ResponseEntity.internalServerError().body(ControllerUtils.wrapMessage("Error during file rename!"));
         } catch (IOException e) {
             return ResponseEntity.internalServerError().body(ControllerUtils.wrapMessage("Error during file rename! Could not move or validate file path."));
+        } catch (Throwable e) {
+            return ResponseEntity.internalServerError().body(ControllerUtils.wrapMessage("Error during file rename!"));
         }
         return ResponseEntity.noContent().build();
     }
@@ -236,7 +236,7 @@ public class ServerController {
         }
         try {
             serverService.deleteProjectFile(server, projectType, filePath);
-        } catch (InterruptedException | IOException e) {
+        } catch (Throwable e) {
             return ResponseEntity.internalServerError().body(ControllerUtils.wrapMessage("Error during file deletion!"));
         }
         return ResponseEntity.noContent().build();
