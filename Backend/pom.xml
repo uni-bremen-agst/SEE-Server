@@ -41,19 +41,19 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
                 <version>3.6.3</version>
+                <configuration>
+                    <rules>
+                        <requireMavenVersion>
+                            <version>${maven-required-version}</version>
+                        </requireMavenVersion>
+                    </rules>
+                </configuration>
                 <executions>
                     <execution>
                         <id>enforce-maven</id>
                         <goals>
                             <goal>enforce</goal>
                         </goals>
-                        <configuration>
-                            <rules>
-                                <requireMavenVersion>
-                                    <version>${maven-required-version}</version>
-                                </requireMavenVersion>
-                            </rules>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>
