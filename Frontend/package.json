@@ -16,7 +16,7 @@
     "@fortawesome/fontawesome-svg-core": "^7.3.1",
     "@fortawesome/free-solid-svg-icons": "^7.2.0",
     "@fortawesome/react-fontawesome": "^3.3.1",
-    "@mui/material": "^9.1.2",
+    "@mui/material": "^9.2.0",
     "axios": "^1.19.0",
     "mui-file-input": "^9.0.0",
     "notistack": "^3.0.2",
