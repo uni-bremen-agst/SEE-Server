@@ -31,13 +31,13 @@ importers:
         version: 9.2.0(@emotion/react@11.14.0(@types/react@19.2.18)(react@19.2.8))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.18)(react@19.2.8))(@types/react@19.2.18)(react@19.2.8))(@types/react@19.2.18)(react-dom@19.2.5(react@19.2.8))(react@19.2.8)
       axios:
         specifier: ^1.19.0
-        version: 1.19.0
+        version: 1.19.0(debug@4.4.3)
       mui-file-input:
         specifier: ^9.0.0
         version: 9.0.0(@emotion/react@11.14.0(@types/react@19.2.18)(react@19.2.8))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.18)(react@19.2.8))(@types/react@19.2.18)(react@19.2.8))(@mui/material@9.2.0(@emotion/react@11.14.0(@types/react@19.2.18)(react@19.2.8))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.18)(react@19.2.8))(@types/react@19.2.18)(react@19.2.8))(@types/react@19.2.18)(react-dom@19.2.5(react@19.2.8))(react@19.2.8))(@types/react@19.2.18)(react-dom@19.2.5(react@19.2.8))(react@19.2.8)
       notistack:
         specifier: ^3.0.2
-        version: 3.0.2(csstype@3.2.3)(react-dom@19.2.5(react@19.2.8))(react@19.2.8)
+        version: 3.0.2(react-dom@19.2.5(react@19.2.8))(react@19.2.8)
       react:
         specifier: ^19.2.8
         version: 19.2.8
@@ -48,8 +48,8 @@ importers:
         specifier: ^7.18.1
         version: 7.18.1(react-dom@19.2.5(react@19.2.8))(react@19.2.8)
       react-router-dom:
-        specifier: ^7.18.1
-        version: 7.18.1(react-dom@19.2.5(react@19.2.8))(react@19.2.8)
+        specifier: ^7.18.2
+        version: 7.18.2(react-dom@19.2.5(react@19.2.8))(react@19.2.8)
     devDependencies:
       '@eslint-react/eslint-plugin':
         specifier: ^4.2.3
@@ -1300,8 +1300,8 @@ packages:
   react-is@19.2.8:
     resolution: {integrity: sha512-s5un28nYxKJw5gvUHyW5PCC28CvBqLu9r3cWgzHT4Vo/5fqqkFcdRYsGcKf50WMPpjjFZS5d76fn3YCo2njKwQ==}
 
-  react-router-dom@7.18.1:
-    resolution: {integrity: sha512-KaZh+X/6UtEp28x51AUYZDMg9NGoz2ja3dNHa+ta/tk40vCzKhQ/RypCWBMLbmDr6//E24Vv5uPsrqXFozdkAg==}
+  react-router-dom@7.18.2:
+    resolution: {integrity: sha512-AIKJ/jgGlFb3EbfCXk5Gzshiwt+l3mqbCrNjmEWMMjqQxNJ3svBa6bgzFyCC2Sw3RA0VWF1kg3uQf2OFhxb8hw==}
     engines: {node: '>=20.0.0'}
     peerDependencies:
       react: '>=18'
@@ -1309,6 +1309,16 @@ packages:
 
   react-router@7.18.1:
     resolution: {integrity: sha512-GDLgg3i3uM0aeJO3Fm+TCS+sDQ7gu12T6x0qdTEzcwqEfleci7JwugVNIF3U//0FWKnJT7ptG+20B2jfDqnZAg==}
+    engines: {node: '>=20.0.0'}
+    peerDependencies:
+      react: '>=18'
+      react-dom: '>=18'
+    peerDependenciesMeta:
+      react-dom:
+        optional: true
+
+  react-router@7.18.2:
+    resolution: {integrity: sha512-aUVMjFm3GAPTTZL7oYr5E7ETiqfQCHRLH+B+5afnICvf0r7kkK4eR6SMuwbSTJw/7t+12khT/Kahij49fqOCIg==}
     engines: {node: '>=20.0.0'}
     peerDependencies:
       react: '>=18'
@@ -2195,9 +2205,9 @@ snapshots:
 
   asynckit@0.4.0: {}
 
-  axios@1.19.0:
+  axios@1.19.0(debug@4.4.3):
     dependencies:
-      follow-redirects: 1.16.0
+      follow-redirects: 1.16.0(debug@4.4.3)
       form-data: 4.0.6
       https-proxy-agent: 5.0.1
       proxy-from-env: 2.1.0
@@ -2493,7 +2503,9 @@ snapshots:
 
   flatted@3.4.4: {}
 
-  follow-redirects@1.16.0: {}
+  follow-redirects@1.16.0(debug@4.4.3):
+    optionalDependencies:
+      debug: 4.4.3
 
   form-data@4.0.6:
     dependencies:
@@ -2695,14 +2707,13 @@ snapshots:
 
   natural-compare@1.4.0: {}
 
-  notistack@3.0.2(csstype@3.2.3)(react-dom@19.2.5(react@19.2.8))(react@19.2.8):
+  notistack@3.0.2(react-dom@19.2.5(react@19.2.8))(react@19.2.8):
     dependencies:
       clsx: 1.2.1
+      csstype: 3.2.3
       goober: 2.1.16(csstype@3.2.3)
       react: 19.2.8
       react-dom: 19.2.5(react@19.2.8)
-    transitivePeerDependencies:
-      - csstype
 
   object-assign@4.1.1: {}
 
@@ -2775,13 +2786,21 @@ snapshots:
 
   react-is@19.2.8: {}
 
-  react-router-dom@7.18.1(react-dom@19.2.5(react@19.2.8))(react@19.2.8):
+  react-router-dom@7.18.2(react-dom@19.2.5(react@19.2.8))(react@19.2.8):
     dependencies:
       react: 19.2.8
       react-dom: 19.2.5(react@19.2.8)
-      react-router: 7.18.1(react-dom@19.2.5(react@19.2.8))(react@19.2.8)
+      react-router: 7.18.2(react-dom@19.2.5(react@19.2.8))(react@19.2.8)
 
   react-router@7.18.1(react-dom@19.2.5(react@19.2.8))(react@19.2.8):
+    dependencies:
+      cookie: 1.1.1
+      react: 19.2.8
+      set-cookie-parser: 2.7.2
+    optionalDependencies:
+      react-dom: 19.2.5(react@19.2.8)
+
+  react-router@7.18.2(react-dom@19.2.5(react@19.2.8))(react@19.2.8):
     dependencies:
       cookie: 1.1.1
       react: 19.2.8
