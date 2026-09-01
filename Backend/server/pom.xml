@@ -143,7 +143,7 @@
         <dependency>
             <groupId>io.livekit</groupId>
             <artifactId>livekit-server</artifactId>
-            <version>0.15.0</version>
+            <version>0.15.1</version>
         </dependency>
         <!-- Testing -->
         <dependency>
