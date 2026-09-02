@@ -1,11 +1,10 @@
-import { Route, Routes } from 'react-router'
+import { BrowserRouter, Route, Routes } from 'react-router'
 import LoginView from './views/LoginView'
 import HomeView from './views/HomeView'
 import ServerView from './views/ServerView'
 import CreateServerView from './views/CreateServerView'
 import SettingsView from './views/SettingsView'
 import UserSettingsView from './views/UserSettingsView'
-import { BrowserRouter } from 'react-router-dom'
 import { use } from 'react'
 import { AuthContext } from './contexts/AuthContext'
 
