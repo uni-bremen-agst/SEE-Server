@@ -627,12 +627,14 @@ public class ServerService {
      * The name of the livekit room is the server name.
      *
      * @param server The server to generate the token for. Must never be null.
+     * @param participantIdentity Unique identity of the participant joining the room.
+     *                            Must never be null or blank.
      * @return The generated token.
      */
-    public String generateLiveKitApiTokenForServer(Server server) {
+    public String generateLiveKitApiTokenForServer(Server server, String participantIdentity) {
         AccessToken token = new AccessToken(liveKitApiKey, liveKitApiSecret);
         token.addGrants(new RoomJoin(true));
-        token.setIdentity("identity");
+        token.setIdentity(participantIdentity);
         token.setExpiration(new Date(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(liveKitTokenDuration)));
         token.addGrants(new RoomName(server.getName()));
         return token.toJwt();
