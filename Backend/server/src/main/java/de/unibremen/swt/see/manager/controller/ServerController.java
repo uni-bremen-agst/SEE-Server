@@ -175,6 +175,8 @@ public class ServerController {
         }
         try {
             serverService.updateProjectFile(server, projectType, filePath, httpServletRequest.getInputStream());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(ControllerUtils.wrapMessage("Invalid project type or file path."));
         } catch (IOException e) {
             return ResponseEntity.badRequest().body(ControllerUtils.wrapMessage("Error during file update! Can't extract file from request."));
         } catch (Throwable e) {
@@ -207,6 +209,8 @@ public class ServerController {
         }
         try {
             serverService.renameProjectFile(server, projectType, filePath, newFilePath);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(ControllerUtils.wrapMessage("Invalid project type or file path."));
         } catch (IOException e) {
             return ResponseEntity.internalServerError().body(ControllerUtils.wrapMessage("Error during file rename! Could not move or validate file path."));
         } catch (Throwable e) {
@@ -236,6 +240,8 @@ public class ServerController {
         }
         try {
             serverService.deleteProjectFile(server, projectType, filePath);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(ControllerUtils.wrapMessage("Invalid project type or file path."));
         } catch (Throwable e) {
             return ResponseEntity.internalServerError().body(ControllerUtils.wrapMessage("Error during file deletion!"));
         }

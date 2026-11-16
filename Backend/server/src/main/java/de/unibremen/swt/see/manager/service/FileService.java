@@ -22,6 +22,7 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -41,7 +42,7 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
  * @see de.unibremen.swt.see.manager.controller.FileController
  */
 @Service
-@Transactional
+@Transactional(rollbackFor = {IOException.class, SQLException.class})
 @RequiredArgsConstructor
 @Slf4j
 public class FileService {
@@ -100,24 +101,44 @@ public class FileService {
     /**
      * Sanitizes the path to a local file in a project and makes sure the file exist when {@code checkExist} is set to true.
      * <p>
-     * If the file path lead to a location outside the project (e.g. {@code ../../../../../random-system.file}) an @see {@link IOException} is thrown.
+     * Absolute paths, paths outside the project, and symbolic links are rejected.
      *
      * @param projectPath The path of the project directory.
      * @param filePath The file path, relative to {@code projectPath}.
      * @param checkExist Set to true, to check if the file exist.
      * @return The absolute file path.
-     * @throws IllegalArgumentException When the file is outside the project directory or doesn't exist.
+     * @throws IllegalArgumentException When the path is absolute, escapes the project, or contains a symbolic link.
      * @throws IOException When the file doesn't exist.
      */
     private Path getFilePathSanitized(Path projectPath, String filePath, boolean checkExist) throws IOException {
-        Path localFilePath = projectPath.resolve(filePath);
-        if (!localFilePath.normalize().startsWith(projectPath)) {
+        Path relativePath = Paths.get(filePath);
+        Path localFilePath = projectPath.resolve(relativePath).normalize();
+        if (relativePath.isAbsolute() || !localFilePath.startsWith(projectPath) || localFilePath.equals(projectPath)) {
             throw new IllegalArgumentException("File path is outside of project directory: " + filePath);
+        }
+        // Check every existing component, including dangling links and the project root.
+        for (Path path = localFilePath; path != null && path.startsWith(projectPath); path = path.getParent()) {
+            if (Files.isSymbolicLink(path)) {
+                throw new IllegalArgumentException("Symbolic links are not allowed in project file paths: " + filePath);
+            }
         }
         if (checkExist && !Files.exists(localFilePath)) {
             throw new IOException("File does not exist: " + localFilePath);
         }
         return localFilePath;
+    }
+
+    /**
+     * Returns the path of a project.
+     * @param server The server the project belongs to.
+     * @param projectType The type of the project.
+     * @return The path of the project.
+     * @throws IOException If the project path can't be determined.
+     */
+    private Path getProjectPath(Server server, String projectType) throws IOException {
+        // Validate before resolving any user-controlled value or creating directories.
+        ProjectType type = ProjectType.valueOf(projectType);
+        return getServerUploadPath(server).resolve(type.name()).normalize();
     }
 
     /**
@@ -128,7 +149,8 @@ public class FileService {
      * @throws IOException If the zip file can't be built.
      */
     private void rebuildZipCacheFile(Server server, String projectType) throws IOException {
-        Path zipPath = getServerUploadPath(server).resolve(projectType + ".zip");
+        ProjectType type = ProjectType.valueOf(projectType);
+        Path zipPath = getServerUploadPath(server).resolve(type.name() + ".zip");
         Files.deleteIfExists(zipPath);
 
         // Rebuild Zip file with the updated file
@@ -160,7 +182,7 @@ public class FileService {
      * @throws IllegalArgumentException will be thrown if the file can't be updated.
      */
     public void updateFileInProject(Server server, String projectType, String filePath, String fileContents) throws IOException {
-        Path projectPath = getServerUploadPath(server).resolve(projectType);
+        Path projectPath = getProjectPath(server, projectType);
         Path localFilePath = getFilePathSanitized(projectPath, filePath, false);
         Path parentPath = localFilePath.getParent();
         if (parentPath != null) {
@@ -182,7 +204,7 @@ public class FileService {
      * @throws IOException will be thrown if the file can't be renamed.
      */
     public void renameFileInProject(Server server, String projectType, String filePath, String newFilePath) throws IOException {
-        Path projectPath = getServerUploadPath(server).resolve(projectType);
+        Path projectPath = getProjectPath(server, projectType);
         Path localOldFilePath = getFilePathSanitized(projectPath, filePath, true);
         Path localNewFilePath = getFilePathSanitized(projectPath, newFilePath, false);
 
@@ -203,7 +225,7 @@ public class FileService {
      * @throws IOException will be thrown if the file can't be deleted.
      */
     public void deleteFileInProject(Server server, String projectType, String filePath) throws IOException {
-        Path projectPath = getServerUploadPath(server).resolve(projectType);
+        Path projectPath = getProjectPath(server, projectType);
         Path localFilePath = getFilePathSanitized(projectPath, filePath, true);
 
         Files.delete(localFilePath);
@@ -404,21 +426,9 @@ public class FileService {
     public Path getPath(ProjectFile projectFile) throws IOException {
         String fileName = projectFile.getName();
         if (fileName == null || fileName.isEmpty()) {
-            throw new RuntimeException("File name must not be empty!");
+            throw new IllegalArgumentException("File name must not be empty!");
         }
         return getServerUploadPath(projectFile.getServer()).resolve(fileName);
-    }
-
-    /**
-     * Extracts the file extension from given file name.
-     *
-     * @param fileName file name to extract the extension from
-     * @return extension of the given file if existent, or else empty
-     * {@code String}
-     */
-    private static String getFileExtension(String fileName) {
-        int idx = fileName.lastIndexOf('.');
-        return (idx != -1) ? fileName.substring(idx + 1) : "";
     }
 
 
